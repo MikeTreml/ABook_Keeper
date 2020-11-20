@@ -2,8 +2,10 @@ import ctypes
 import os
 import pathlib
 import sqlite3
-
+import subprocess
 import easygui as easygui
+import eyed3
+import ffmpeg as ffmpeg
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
@@ -330,12 +332,12 @@ class Ui_MainWindow(object):
         font.setPointSize(10)
         self.label_51.setFont(font)
         self.label_51.setObjectName("label_51")
-        self.pushButton = QtWidgets.QPushButton(self.main)
-        self.pushButton.setGeometry(QtCore.QRect(10, 13, 91, 30))
+        self.open_folder_button = QtWidgets.QPushButton(self.main)
+        self.open_folder_button.setGeometry(QtCore.QRect(10, 13, 91, 30))
         font = QtGui.QFont()
         font.setPointSize(10)
-        self.pushButton.setFont(font)
-        self.pushButton.setObjectName("pushButton")
+        self.open_folder_button.setFont(font)
+        self.open_folder_button.setObjectName("pushButton")
         self.googleButton = QtWidgets.QPushButton(self.main)
         self.googleButton.setGeometry(QtCore.QRect(5, 44, 71, 23))
         self.googleButton.setStyleSheet("@QPushButton:checked {background-color: blue;}")
@@ -584,7 +586,7 @@ class Ui_MainWindow(object):
         self.googleSeriesSearch_txt.raise_()
         self.googleArtWork.raise_()
         self.label_51.raise_()
-        self.pushButton.raise_()
+        self.open_folder_button.raise_()
         self.googleButton.raise_()
         self.goodreadsGoogleButton.raise_()
         self.ffSearchButton.raise_()
@@ -679,7 +681,8 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.button_configure()
         self.restore_settings()
-       # self.combobox_configure()
+        self.path = 'smb://mike-pc/D/A/'
+        self.combobox_configure()
 
 
     def button_configure(self):
@@ -689,10 +692,10 @@ class Ui_MainWindow(object):
         self.googlePullButton.clicked.connect(self.googleSave)
         self.saveSettingsButton.clicked.connect(self.save_settings)
         #self.saveButton.clicked.connect(self.SaveBtn)
-        #self.pushButton.clicked.connect(self.OpenFolderBtn)
+        self.open_folder_button.clicked.connect(self.OpenFolderBtn)
 
-   # def combobox_configure(self):
-       # self.fileComboBox.currentIndexChanged.connect(self.UpdateComboBox)
+    def combobox_configure(self):
+        self.fileComboBox.currentIndexChanged.connect(self.UpdateComboBox)
        # self.goodreadsComboBox.currentIndexChanged.connect(self.grComboBoxSelect)
        # self.audibleComboBox.currentIndexChanged.connect(self.aComboBoxSelect)
       #  self.ffComboBox.currentIndexChanged.connect(self.ffComboBoxSelect)
@@ -718,7 +721,7 @@ class Ui_MainWindow(object):
         self.label_61.setText(_translate("MainWindow", "Series"))
         self.label_55.setText(_translate("MainWindow", "Title"))
         self.label_51.setText(_translate("MainWindow", "Book #"))
-        self.pushButton.setText(_translate("MainWindow", "Open Folder"))
+        self.open_folder_button.setText(_translate("MainWindow", "Open Folder"))
         self.googleButton.setText(_translate("MainWindow", "Google"))
         self.goodreadsGoogleButton.setText(_translate("MainWindow", "Goodreads"))
         self.ffSearchButton.setText(_translate("MainWindow", "FantasticFiction"))
@@ -752,8 +755,7 @@ class Ui_MainWindow(object):
         self.saveButton.setText(_translate("MainWindow", "Save"))
 
     def ClearFields(self):
-        self.ffTrackNo_txt.setText("")
-
+        self.ffTrackNo.setText("")
         self.ffTitleSearch_txt.setText("")
         self.ffAuthorSearch_txt.setText("")
         self.ffSeriesSearch_txt.setText("")
@@ -766,7 +768,7 @@ class Ui_MainWindow(object):
         self.googleSeriesSearch_txt.setText("")
         self.googleFuzzyAV.setText("")
 
-        self.goodreadsTrackNo_txt.setText("")
+        self.goodreadsTrackNo.setText("")
         self.goodreadsTitleSearch_txt.setText("")
         self.goodreadsAuthorSearch_txt.setText("")
         self.goodreadsSeriesSearch_txt.setText("")
@@ -783,7 +785,7 @@ class Ui_MainWindow(object):
         self.audibleComboBox.clear()
         self.ffComboBox.clear()
         self.googleComboBox.clear()
-        self.googleComboBoxComboBox.clear()
+
         self.deleteExist('D:\\AudibleApp\\grArtWork.jpg')
         self.deleteExist('D:\\AudibleApp\\PICaudible.jpg')
         self.deleteExist('D:\\AudibleApp\\gaArtWork.jpg')
@@ -849,6 +851,7 @@ class Ui_MainWindow(object):
         self.FinishedLocation.setText(settings[1][0])
         self.SaveFormatText.setText(settings[2][0])
 
+
     def save_settings(self):
         db_file = "audiobookspython.db"
         con = sqlite3.connect(db_file)
@@ -861,6 +864,7 @@ class Ui_MainWindow(object):
         con.commit()
         #**Create messagebox
 
+
     def OpenFolderBtn(self):
         self.fileComboBox.clear()
         list_of_files = []
@@ -869,7 +873,26 @@ class Ui_MainWindow(object):
         for elem in list_of_files:
             self.fileComboBox.addItem(elem)
 
-
+    def UpdateComboBox(self):
+        self.ClearFields()
+        if self.fileComboBox.currentText() != "":
+            audio_file = eyed3.load(self.fileComboBox.currentText())
+            title = str(audio_file.tag.title)
+            artist = str(audio_file.tag.artist)
+            album = str(audio_file.tag.album)
+            track_No = str(audio_file.tag.track_num[0])
+            composer = str(audio_file.tag.composer)
+            release_Date = str(audio_file.tag.release_date)
+            album_Artist = str(audio_file.tag.album_artist)
+            genre = str(audio_file.tag.genre)
+            audible_URL = str(audio_file.tag.artist_url).replace('None', '')
+            ff_URL = str(audio_file.tag.commercial_url).replace('None', '')
+            #google_URL = str(audio_file.tag.internet_radio_url).replace('None', '')
+            goodreads_URL = str(audio_file.tag.copyright_url).replace('None', '')
+            for image in audio_file.tag.images:
+                image_file = open("assets/artwork/{0}.jpg".format("originalArtWork"), "wb")
+                image_file.write(image.image_data)
+                image_file.close()
 
 if __name__ == "__main__":
     import sys
