@@ -1,6 +1,9 @@
+import ctypes
 import os
 import pathlib
+import sqlite3
 
+import easygui as easygui
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
@@ -671,18 +674,20 @@ class Ui_MainWindow(object):
         self.finishedArtWork.setOpenExternalLinks(False)
         self.finishedArtWork.setObjectName("finishedArtWork")
         MainWindow.setCentralWidget(self.centralwidget)
-
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.button_configure()
+        self.restore_settings()
        # self.combobox_configure()
+
 
     def button_configure(self):
         self.audiblePullButton.clicked.connect(self.audibleSave)
         self.ffPullButton.clicked.connect(self.ffSave)
         self.goodreadsPullButton.clicked.connect(self.goodSave)
         self.googlePullButton.clicked.connect(self.googleSave)
+        self.saveSettingsButton.clicked.connect(self.save_settings)
         #self.saveButton.clicked.connect(self.SaveBtn)
         #self.pushButton.clicked.connect(self.OpenFolderBtn)
 
@@ -824,6 +829,37 @@ class Ui_MainWindow(object):
         file = pathlib.Path(path)
         if file.exists():
             os.remove(path)
+
+    def file_locations(self):
+        return self.FileLocation.text()
+
+    def save_locations(self):
+        return self.FinishedLocation.text()
+
+    def save_format(self):
+        return self.SaveFormatText.text()
+
+    def restore_settings(self):
+        db_file = "audiobookspython.db"
+        con = sqlite3.connect(db_file)
+        cur = con.cursor()
+        c = cur.execute("SELECT * FROM settings")
+        settings = c.fetchall()
+        self.FileLocation.setText(settings[0][0])
+        self.FinishedLocation.setText(settings[1][0])
+        self.SaveFormatText.setText(settings[2][0])
+
+    def save_settings(self):
+        db_file = "audiobookspython.db"
+        con = sqlite3.connect(db_file)
+        query = "UPDATE settings SET setting = '"+self.FileLocation.text()+"' WHERE id = 1;"
+        con.execute(query)
+        query = " UPDATE settings SET setting= '"+self.FinishedLocation.text()+"' WHERE id=2;"
+        con.execute(query)
+        query = " UPDATE settings SET setting= '" + self.SaveFormatText.text() + "' WHERE id=3;"
+        con.execute(query)
+        con.commit()
+        #**Create messagebox
 
 if __name__ == "__main__":
     import sys
