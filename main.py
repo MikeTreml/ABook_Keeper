@@ -861,6 +861,16 @@ class Ui_MainWindow(object):
         con.commit()
         #**Create messagebox
 
+    def OpenFolderBtn(self):
+        self.fileComboBox.clear()
+        list_of_files = []
+        for (dir_path, dir_names, filenames) in os.walk(self.file_locations()):
+            list_of_files = [os.path.join(dir_path, file) for file in filenames]
+        for elem in list_of_files:
+            self.fileComboBox.addItem(elem)
+
+
+
 if __name__ == "__main__":
     import sys
 
