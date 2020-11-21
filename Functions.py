@@ -7,6 +7,49 @@ import main
 
 
 
+def try_check(book,string1):
+    result =""
+    try:
+        result = book[string1]
+    except:
+        result= ""
+    return result
+def try_check2(book,string1,string2):
+    result =""
+    try:
+        result = book[string1][string2]
+    except:
+        result= ""
+    return result
+def try_check3(book,string1,string2,string3):
+    result =""
+    try:
+        result = book[string1][string2][string3]
+    except:
+        result= ""
+    return result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

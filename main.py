@@ -73,7 +73,7 @@ class Ui_MainWindow(object):
         self.googleArtWork = QLabel(self.main)
         self.googleAuthorSearch_txt = QLineEdit(self.main)
         self.googleButton = QPushButton(self.main)
-        self.googleComboBox = QComboBox(self.main)
+        self.google_combobox = QComboBox(self.main)
         self.googleFuzzyAV = QLineEdit(self.main)
         self.googlePullButton = QPushButton(self.main)
         self.googleSeriesSearch_txt = QLineEdit(self.main)
@@ -115,7 +115,7 @@ class Ui_MainWindow(object):
         self.saveButton_2 = QPushButton(self.main)
         self.SaveFormatText = QLineEdit(self.settings)
         self.saveSettingsButton = QPushButton(self.settings)
-        self.SearchButton = QPushButton(self.main)
+        self.search_button = QPushButton(self.main)
         self.tab = QWidget()
         self.tabWidget = QTabWidget(self.centralwidget)
         self.WebSitecomboBox = QComboBox(self.settings)
@@ -243,7 +243,7 @@ class Ui_MainWindow(object):
         self.googleButton.setChecked(False)
         self.googleButton.setGeometry(QtCore.QRect(5, 44, 71, 23))
         self.googleButton.setStyleSheet("@QPushButton:checked {background-color: blue;}")
-        self.googleComboBox.setGeometry(QtCore.QRect(10, 146, 401, 30))
+        self.google_combobox.setGeometry(QtCore.QRect(10, 146, 401, 30))
         self.googleFuzzyAV.setAlignment(QtCore.Qt.AlignCenter)
         self.googleFuzzyAV.setGeometry(QtCore.QRect(540, 52, 24, 20))
         self.googlePullButton.setGeometry(QtCore.QRect(690, 303, 71, 23))
@@ -294,7 +294,7 @@ class Ui_MainWindow(object):
         self.saveButton.setGeometry(QtCore.QRect(1060, -90, 81, 27))
         self.SaveFormatText.setGeometry(QtCore.QRect(10, 170, 529, 21))
         self.saveSettingsButton.setGeometry(QtCore.QRect(0, 210, 113, 32))
-        self.SearchButton.setGeometry(QtCore.QRect(573, 3, 71, 27))
+        self.search_button.setGeometry(QtCore.QRect(573, 3, 71, 27))
         self.tabWidget.setElideMode(QtCore.Qt.ElideLeft)
         self.tabWidget.setGeometry(QtCore.QRect(-4, 1, 841, 611))
         self.tabWidget.setTabPosition(QTabWidget.North)
@@ -359,7 +359,7 @@ class Ui_MainWindow(object):
         self.saveButton_2.setText(_translate("MainWindow", "SAVE"))
         self.saveButton.setText(_translate("MainWindow", "Save"))
         self.saveSettingsButton.setText(_translate("MainWindow", "Save Settings"))
-        self.SearchButton.setText(_translate("MainWindow", "Search"))
+        self.search_button.setText(_translate("MainWindow", "Search"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.main), _translate("MainWindow", "Main"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.settings), _translate("MainWindow", "Settings"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Detailed"))
@@ -394,7 +394,7 @@ class Ui_MainWindow(object):
 
         self.audibleComboBox.clear()
         self.ffComboBox.clear()
-        self.googleComboBox.clear()
+        self.google_combobox.clear()
 
         self.deleteExist('assets/artwork/goodreadsArtWork.jpg')
         self.deleteExist('assets/artwork/finishedArtWork.jpg')
@@ -412,12 +412,13 @@ class Ui_MainWindow(object):
         self.goodreadsPullButton.clicked.connect(self.goodreads_save)
         self.googlePullButton.clicked.connect(self.google_save)
         self.saveSettingsButton.clicked.connect(self.save_settings)
+        self.search_button.clicked.connect(self.run_searches)
         # self.saveButton.clicked.connect(self.SaveBtn)
-        self.open_folder_button.clicked.connect(self.open_folder)
+        self.open_folder_button.clicked.connect(self.file_combobox_update)
 
     def combobox_configure(self):
-        self.fileComboBox.currentIndexChanged.connect(self.update_file_combobox)
-        self.googleComboBox.currentIndexChanged.connect(self.gaComboBoxSelect)
+        self.fileComboBox.currentIndexChanged.connect(self.file_combobox_select)
+        self.google_combobox.currentIndexChanged.connect(self.google_ComboBox_select)
     # self.goodreadsComboBox.currentIndexChanged.connect(self.grComboBoxSelect)
     # self.audibleComboBox.currentIndexChanged.connect(self.aComboBoxSelect)
     #  self.ffComboBox.currentIndexChanged.connect(self.ffComboBoxSelect)
@@ -506,18 +507,18 @@ class Ui_MainWindow(object):
         con.commit()
         # **Create messagebox
 
-    def open_folder(self):
+    def file_combobox_update(self):
         self.fileComboBox.clear()
         list_of_files = []
         for (dir_path, dir_names, filenames) in os.walk(self.file_locations()):
-            list_of_files = [os.path.join(dir_path, file) for file in filenames]
-        for elem in list_of_files:
-            self.fileComboBox.addItem(elem)
+            for file in filenames:
+                if "mp3" in file.lower():
+                    self.fileComboBox.addItem(file)
 
-    def update_file_combobox(self):
+    def file_combobox_select(self):
         self.clear_fields()
         if self.fileComboBox.currentText() != "":
-            audio_file = eyed3.load(self.fileComboBox.currentText())
+            audio_file = eyed3.load(os.path.join(self.file_locations(), self.fileComboBox.currentText()))
             title = str(audio_file.tag.title)
             author = str(audio_file.tag.artist)
             series = str(audio_file.tag.album)
@@ -544,6 +545,22 @@ class Ui_MainWindow(object):
                 image_file.close()
             self.image_refresh()
 
+    def google_combobox_update(self):
+        self.fileComboBox.clear()
+        list_of_files = []
+        for (dir_path, dir_names, filenames) in os.walk(self.file_locations()):
+            for file in filenames:
+                if "mp3" in file.lower():
+                    self.fileComboBox.addItem(file)
+
+    def google_ComboBox_select(self):
+        if self.google_combobox.currentIndex() >= 0:
+
+            self.GraphicAScrape()
+            self.graphicSave()
+        else:
+            print('gaComboBoxSelect empty')
+        self.fuzzyRateFeild()
 
 if __name__ == "__main__":
     import sys
