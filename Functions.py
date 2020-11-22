@@ -1,28 +1,33 @@
 import os
-import shutil
 import pathlib
+import shutil
+
 import eyed3 as eyed3
 import requests
 
+import api_keys
 
 
-
-def try_check(book,string1):
-    result =""
+def try_check(book, string1):
+    result = ""
     try:
         result = book[string1]
     except:
-        result= ""
+        result = ""
     return result
-def try_check2(book,string1,string2):
-    result =""
+
+
+def try_check2(book, string1, string2):
+    result = ""
     try:
         result = book[string1][string2]
     except:
-        result= ""
+        result = ""
     return result
-def try_check3(book,string1,string2,string3):
-    result =""
+
+
+def try_check3(book, string1, string2, string3):
+    result = ""
     try:
         result = book[string1][string2][string3]
     except:
@@ -32,7 +37,7 @@ def try_check3(book,string1,string2,string3):
 
 def google_search(input_string):
     search_string = input_string.replace(" ", "+")
-    string_builder = "https://www.googleapis.com/books/v1/volumes?q=" + search_string + "&key=AIzaSyBN3bvByu0-qltVIn4b-QhrzRkM5pry4gM"
+    string_builder = "https://www.googleapis.com/books/v1/volumes?q=" + search_string + api_keys.google_api_key
     dict_book = {}
     google_request = requests.get(string_builder)
 
