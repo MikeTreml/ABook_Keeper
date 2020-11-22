@@ -2,10 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*Key.py
 # C extensions
 *.so
-
+API_Key.py
 # Distribution / packaging
 .Python
 build/
@@ -127,3 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+API_Key.py
