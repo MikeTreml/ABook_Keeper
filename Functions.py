@@ -2,8 +2,8 @@ import os
 import shutil
 import pathlib
 import eyed3 as eyed3
+import requests
 
-import main
 
 
 
@@ -30,27 +30,32 @@ def try_check3(book,string1,string2,string3):
     return result
 
 
+def google_search(input_string):
+    search_string = input_string.replace(" ", "+")
+    string_builder = "https://www.googleapis.com/books/v1/volumes?q=" + search_string + "&key=AIzaSyBN3bvByu0-qltVIn4b-QhrzRkM5pry4gM"
+    dict_book = {}
+    google_request = requests.get(string_builder)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    data = google_request.json()
+    for book in data["items"]:
+        title = try_check2(book, 'volumeInfo', 'title')
+        subtitle = try_check2(book, 'volumeInfo', 'subtitle')
+        try:
+            authors = book['volumeInfo', 'authors']
+        except:
+            authors = ['']
+        date = try_check2(book, 'volumeInfo', 'publishedDate')
+        publisher = try_check2(book, 'volumeInfo', 'publisher')
+        description = try_check2(book, 'volumeInfo', 'description')
+        image = try_check3(book, 'volumeInfo', 'imageLinks', 'thumbnail')
+        dict_book[title + " " + subtitle + " " + authors[0]] = {"title": title,
+                                                                "subtitle": subtitle,
+                                                                "authors": authors,
+                                                                "date": date,
+                                                                "publisher": publisher,
+                                                                "description": description,
+                                                                "image": image
+                                                                }
 
 
 def OpenFolderBtn(self):
