@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="audiobookspython" uuid="155b3f89-e723-4a24-a4fe-298a9bbe81bc">
+    <data-source source="LOCAL" name="audiobookspython" uuid="293625f6-ee64-4e4c-bf22-346f6809b11c">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
