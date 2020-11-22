@@ -1,19 +1,18 @@
-import ctypes
 import os
 import pathlib
 import sqlite3
-import subprocess
-import easygui as easygui
+import urllib.request as req
+
 import eyed3
-import ffmpeg as ffmpeg
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QPalette, QColor
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt, QMetaObject
-import sys
-from PyQt5.QtCore import QFile, QTextStream
+from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtWidgets import QApplication, QPushButton, QMainWindow, QWidget, QLineEdit, QLabel, QGroupBox, QComboBox, \
     QTabWidget
+from fuzzywuzzy import fuzz
+
 import Functions
+
 
 class Ui_MainWindow(object):
 
@@ -68,7 +67,7 @@ class Ui_MainWindow(object):
         self.goodreadsPullButton = QPushButton(self.main)
         self.goodreads_series = QLineEdit(self.main)
         self.goodreads_title = QLineEdit(self.main)
-        self.goodreadsTrackNo = QLineEdit(self.main)
+        self.goodreads_book_number = QLineEdit(self.main)
         self.goodreads_URL = QLineEdit(self.main)
         self.googleArtWork = QLabel(self.main)
         self.google_author = QLineEdit(self.main)
@@ -233,8 +232,8 @@ class Ui_MainWindow(object):
         self.goodreadsPullButton.setStyleSheet("background-color: rgb(110, 59, 0);")
         self.goodreads_series.setGeometry(QtCore.QRect(210, 356, 211, 20))
         self.goodreads_title.setGeometry(QtCore.QRect(160, 322, 261, 20))
-        self.goodreadsTrackNo.setAlignment(QtCore.Qt.AlignCenter)
-        self.goodreadsTrackNo.setGeometry(QtCore.QRect(100, 322, 51, 20))
+        self.goodreads_book_number.setAlignment(QtCore.Qt.AlignCenter)
+        self.goodreads_book_number.setGeometry(QtCore.QRect(100, 322, 51, 20))
         self.goodreads_URL.setGeometry(QtCore.QRect(10, 389, 411, 20))
         self.googleArtWork.setGeometry(QtCore.QRect(420, 54, 120, 120))
         self.googleArtWork.setScaledContents(True)
@@ -378,7 +377,7 @@ class Ui_MainWindow(object):
         self.google_series.setText("")
         self.googleFuzzyAV.setText("")
 
-        self.goodreadsTrackNo.setText("")
+        self.goodreads_book_number.setText("")
         self.goodreads_title.setText("")
         self.goodreads_author.setText("")
         self.goodreads_series.setText("")
@@ -437,7 +436,7 @@ class Ui_MainWindow(object):
         self.finalTrack.setText(self.goodreads_title.text())
         self.finalArtist.setText(self.goodreads_author.text())
         self.finalAlbum.setText(self.goodreads_series.text())
-        self.finalTrackNo.setText(self.goodreadsTrackNo.text())
+        self.finalTrackNo.setText(self.goodreads_book_number.text())
 
     def ff_save(self):
         self.finalTrack.setText(self.ff_title.text())
@@ -491,9 +490,12 @@ class Ui_MainWindow(object):
         cur = con.cursor()
         c = cur.execute("SELECT * FROM settings")
         settings = c.fetchall()
-        self.FileLocation.setText(settings[0][0])
-        self.FinishedLocation.setText(settings[1][0])
-        self.SaveFormatText.setText(settings[2][0])
+        print(settings[0])
+        print()
+        # ** needs a try catch if empty
+        self.FileLocation.setText(settings[0][1])
+        self.FinishedLocation.setText(settings[1][1])
+        self.SaveFormatText.setText(settings[2][1])
 
     def save_settings(self):
         db_file = "audiobookspython.db"
@@ -545,28 +547,36 @@ class Ui_MainWindow(object):
                 image_file.close()
             self.image_refresh()
 
-    def google_combobox_update(self):
-        self.file_ComboBox.clear()
-        list_of_files = []
-        for (dir_path, dir_names, filenames) in os.walk(self.file_locations()):
-            for file in filenames:
-                if "mp3" in file.lower():
-                    self.file_ComboBox.addItem(file)
+    def google_combobox_update(self, book_list):
+        self.google_combobox.clear()
+        for book in book_list:
+            self.google_combobox.addItem(book['id'])
 
     def google_ComboBox_select(self):
         if self.google_combobox.currentIndex() >= 0:
-            #self.google_save()
-        else:
-
-        self.fuzzyRateFeild()
+            record = Functions.database_get(self.google_combobox.currentText(), "googlebooks")
+            self.google_title.setText(record[1])
+            self.google_author.setText(record[2])
+            self.google_series.setText(record[4])
+            try:
+                req.urlretrieve(record[6], "assets/artwork/googleArtWork.jpg")
+            except:
+                print("image issue")
+            self.image_refresh()
+            self.googleFuzzyAV.setText(str(self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])))
 
     def run_searches(self):
-        searchstring = self.file
+        searchstring = self.file_title.text() + " " + self.ff_author.text() + " " + self.file_series.text()
         if self.google_search_toggle.isChecked():
-            Functions.google_search(searchstring)
+            book_list = Functions.google_search(searchstring)
+            self.google_combobox_update(book_list)
+        # if self.audible_search_toggle.isChecked():
+        # book_list = Functions.google_search(searchstring)
+        # self.google_combobox_update(book_list)
 
-
-
+    def fuzzyRateFeild(self, new_info):
+        file_info: str = self.file_title.text() + ' ' + self.file_author.text() + ' ' + self.file_series.text()
+        return fuzz.token_set_ratio(new_info, file_info.replace('None', ''))
 
 if __name__ == "__main__":
     import sys
