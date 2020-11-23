@@ -553,9 +553,7 @@ class Ui_MainWindow(object):
             self.image_refresh()
 
     def combobox_google_select(self):
-        print(self.file_ComboBox.currentIndex() >= 0)
-        print(self.file_ComboBox.currentText() != "")
-        if self.file_ComboBox.currentIndex() >= 0 and self.file_ComboBox.currentText() != "":
+        if self.file_ComboBox.currentIndex() >= 0:
             print(self.google_combobox.currentIndex())
             record = Functions.database_get(self.google_combobox.currentText(), "googlebooks")
             print(record)
@@ -569,6 +567,22 @@ class Ui_MainWindow(object):
             self.image_refresh()
             self.googleFuzzyAV.setText(str(self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])))
 
+    def combobox_audible_select(self):
+
+    # if self.file_ComboBox.currentIndex() >= 0:
+    #     print(self.google_combobox.currentIndex())
+    #     record = Functions.database_get(self.google_combobox.currentText(), "googlebooks")
+    #     print(record)
+    #     self.google_title.setText(record[1])
+    #     self.google_author.setText(record[2])
+    #     self.google_series.setText(record[4])
+    #     try:
+    #         req.urlretrieve(record[6], "assets/artwork/googleArtWork.jpg")
+    #     except:
+    #         print("image issue")
+    #     self.image_refresh()
+    #     self.googleFuzzyAV.setText(str(self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])))
+
     def google_combobox_update(self, book_list):
         self.google_combobox.blockSignals(True)
         self.google_combobox.clear()
@@ -576,14 +590,21 @@ class Ui_MainWindow(object):
         for book in book_list:
             self.google_combobox.addItem(book['id'])
 
+    def audible_combobox_update(self, book_list):
+        self.audible_combobox.blockSignals(True)
+        self.audible_combobox.clear()
+        self.audible_combobox.blockSignals(False)
+        for book in book_list:
+            self.audible.addItem(book['title'] + " " + book['series'] + " " + book['author'] + "-" + book['id'])
+
     def run_searches(self):
         searchstring = self.file_title.text() + " " + self.ff_author.text() + " " + self.file_series.text()
         if self.google_search_toggle.isChecked():
             book_list = Functions.google_search(searchstring)
             self.google_combobox_update(book_list)
-        # if self.audible_search_toggle.isChecked():
-        #    book_list = Functions.google_search(searchstring)
-        #   self.google_combobox_update(book_list)
+        if self.audible_search_toggle.isChecked():
+            book_list = Functions.audible_search(searchstring)
+        self.audible_combobox_update(book_list)
 
     def fuzzyRateFeild(self, new_info):
         file_info: str = self.file_title.text() + ' ' + self.file_author.text() + ' ' + self.file_series.text()
