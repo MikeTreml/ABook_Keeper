@@ -1,6 +1,8 @@
+import re
 import sqlite3
 
 import requests
+from bs4 import BeautifulSoup
 
 import api_keys
 
@@ -32,13 +34,71 @@ def try_check3(book, string1, string2, string3):
     return result
 
 
+def soup_check(soup):
+    # some books don't have the requested info. this is to check is it had info to pull
+    try:
+        # cleaning up the string
+        result = re.sub(r"[\n][\W]+[^\w]", "", soup.get_text(strip=True))
+    except:
+        # if there was no result
+        result = ""
+    return result
+
+
+def audible_search(input_string):
+    url = "https://www.audible.com/search?keywords=" + input_string
+    page_source = requests.get(url)
+    soup = BeautifulSoup(page_source.text, 'lxml')
+    books = soup.find_all('li', attrs={"class": "bc-list-item productListItem"})
+    book_list = []
+    for book in books:
+        website = book.find('a', attrs={"class": "bc-link bc-color-link"})['href']
+        website_split = website.split('/')
+        id = website_split[-1]
+        img_url = book.find('img', attrs={"id": "nojs_img_"})['src']
+        title = soup_check(book.find('h2', attrs={"class": "bc-heading bc-color-base bc-text-bold"}))
+        author = soup_check(book.find('li', attrs={"class": "bc-list-item authorLabel"})).replace("By:", "")
+        narrator = soup_check(book.find('li', attrs={"class": "bc-list-item narratorLabel"})).replace("Narrated by:",
+                                                                                                      "")
+        subtitle = soup_check(book.find('li', attrs={"class": "bc-list-item subtitle"})).replace("Series:", "")
+
+        series_book = soup_check(book.find('li', attrs={"class": "bc-list-item seriesLabel"})).replace("Series:",
+                                                                                                       " Series,", "")
+        split_series_book = series_book.split("Book")
+        book_number = split_series_book[1]
+        series = split_series_book[0]
+        length = soup_check(book.find('li', attrs={"class": "bc-list-item runtimeLabel"})).replace("Length: ", "")
+        date = soup_check(book.find('li', attrs={"class": "bc-list-item releaseDateLabel"})).replace("Release date:",
+                                                                                                     "")
+        language = soup_check(book.find('li', attrs={"class": "bc-list-item languageLabel"})).replace("Language:", "")
+        rating = soup_check(book.find('li', attrs={"class": "bc-list-item ratingsLabel"})).replace(" out of 5 stars",
+                                                                                                   " stars ")
+        web_url = "https://www.audible.com/pd/" + id
+
+        book_list.append({"id": id, "title": title, "author": author, "narrator": narrator, "series": series,
+                          "book_number": book_number, "image_url": img_url, "length": length, "release_date": date,
+                          "web_url": web_url, "rating": rating, "subtitle": subtitle, "language": language})
+    print(book_list)
+    audible_database_post(book_list)
+    return book_list
+
+
+def audible_database_post(book_list):
+    db_file = "audiobookspython.db"
+    con = sqlite3.connect(db_file)
+    for book in book_list:
+        con.execute(
+            'INSERT INTO audible (id, title, author, narrator, series, book_number, length, release_date, web_url, rating, subtitle, language) '
+            'VALUES (:id, :title, :author, :narrator, :series, :book_number, :length, :release_date, :web_url, :rating, :subtitle, :language);',
+            book)
+    con.commit()
+
+
 def google_search(input_string):
     search_string = input_string.replace(" ", "+")
     string_builder = "https://www.googleapis.com/books/v1/volumes?q=" + search_string + api_keys.google_api_key
     book_list = []
-
     google_request = requests.get(string_builder)
-
     data = google_request.json()
     print(data)
     for book in data["items"]:
@@ -71,8 +131,6 @@ def google_database_post(book_list):
         con.execute(
             'INSERT INTO googlebooks (id, title, subtitle, authors, release_date, publisher,description,image_url) '
             'VALUES (:id, :title, :subtitle, :authors, :release_date, :publisher,:description,:image_url);', book)
-        # query = "INSERT INTO googlebooks" + str(keys) + " values (" + sql + ") ON CONFLICT(" + conflict + ") DO UPDATE SET " + dupSQL[:-2] + ';'
-        # con.execute(query)
     con.commit()
 
 
