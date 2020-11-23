@@ -30,7 +30,7 @@ class Ui_MainWindow(object):
 
         self.audibleArtWork = QLabel(self.main)
         self.audibleAuthorSearch = QLineEdit(self.main)
-        self.audibleComboBox = QComboBox(self.main)
+        self.audible_combobox = QComboBox(self.main)
         self.audibleFuzzyAV = QLineEdit(self.main)
         self.audible_data_post = QPushButton(self.main)
         self.audible_search_toggle = QPushButton(self.main)
@@ -40,7 +40,7 @@ class Ui_MainWindow(object):
         self.audible_URL = QLineEdit(self.main)
         self.ffArtWork = QLabel(self.main)
         self.ff_author = QLineEdit(self.main)
-        self.ffComboBox = QComboBox(self.main)
+        self.ff_combobox = QComboBox(self.main)
         self.ffFuzzyAV = QLineEdit(self.main)
         self.ffPullButton = QPushButton(self.main)
         self.ff_search_toggle = QPushButton(self.main)
@@ -62,7 +62,7 @@ class Ui_MainWindow(object):
         self.FinishedLocation = QLineEdit(self.settings)
         self.goodreadsArtWork = QLabel(self.main)
         self.goodreads_author = QLineEdit(self.main)
-        self.goodreadsComboBox = QComboBox(self.main)
+        self.goodreads_combobox = QComboBox(self.main)
         self.goodreadsFuzzyAV = QLineEdit(self.main)
         self.goodreads_search_toggle = QPushButton(self.main)
         self.goodreadsPullButton = QPushButton(self.main)
@@ -169,7 +169,7 @@ class Ui_MainWindow(object):
         self.audibleArtWork.setScaledContents(True)
         self.audibleArtWork.setStyleSheet("")
         self.audibleAuthorSearch.setGeometry(QtCore.QRect(10, 222, 181, 20))
-        self.audibleComboBox.setGeometry(QtCore.QRect(6, 281, 401, 22))
+        self.audible_combobox.setGeometry(QtCore.QRect(6, 281, 401, 22))
         self.audibleFuzzyAV.setAlignment(QtCore.Qt.AlignCenter)
         self.audibleFuzzyAV.setGeometry(QtCore.QRect(540, 183, 24, 20))
         self.audible_data_post.setGeometry(QtCore.QRect(690, 283, 71, 23))
@@ -188,7 +188,7 @@ class Ui_MainWindow(object):
         self.ffArtWork.setGeometry(QtCore.QRect(420, 441, 120, 120))
         self.ffArtWork.setScaledContents(True)
         self.ff_author.setGeometry(QtCore.QRect(10, 486, 171, 20))
-        self.ffComboBox.setGeometry(QtCore.QRect(6, 543, 400, 22))
+        self.ff_combobox.setGeometry(QtCore.QRect(6, 543, 400, 22))
         self.ffFuzzyAV.setAlignment(QtCore.Qt.AlignCenter)
         self.ffFuzzyAV.setGeometry(QtCore.QRect(540, 445, 24, 20))
         self.ffPullButton.setGeometry(QtCore.QRect(573, 283, 121, 23))
@@ -221,7 +221,7 @@ class Ui_MainWindow(object):
         self.goodreadsArtWork.setGeometry(QtCore.QRect(420, 309, 120, 120))
         self.goodreadsArtWork.setScaledContents(True)
         self.goodreads_author.setGeometry(QtCore.QRect(10, 354, 181, 20))
-        self.goodreadsComboBox.setGeometry(QtCore.QRect(6, 413, 401, 22))
+        self.goodreads_combobox.setGeometry(QtCore.QRect(6, 413, 401, 22))
         self.goodreadsFuzzyAV.setAlignment(QtCore.Qt.AlignCenter)
         self.goodreadsFuzzyAV.setEnabled(True)
         self.goodreadsFuzzyAV.setGeometry(QtCore.QRect(540, 315, 24, 20))
@@ -309,6 +309,7 @@ class Ui_MainWindow(object):
         self.button_configure()
         self.restore_settings()
         self.combobox_configure()
+        self.delete_artwork()
         self.image_refresh()
 
     def retranslateUi(self, MainWindow):
@@ -391,20 +392,24 @@ class Ui_MainWindow(object):
         self.audibleSeriesSearch.setText("")
         self.audible_URL.setText("")
         self.audibleFuzzyAV.setText("")
-
-        self.audibleComboBox.clear()
-        self.ffComboBox.clear()
+        self.audible_combobox.clear()
+        self.ff_combobox.clear()
         self.google_combobox.clear()
+        self.goodreads_combobox.clear()
 
+        self.audible_combobox = []
+        self.ff_combobox = []
+        self.goodreads_combobox = []
+        # self.google_combobox = []
+        self.delete_artwork()
+
+    def delete_artwork(self):
         self.deleteExist('assets/artwork/goodreadsArtWork.jpg')
         self.deleteExist('assets/artwork/finishedArtWork.jpg')
         self.deleteExist('assets/artwork/googleArtWork.jpg')
         self.deleteExist('assets/artwork/audibleArtWork.jpg')
         self.deleteExist('assets/artwork/ffArtWork.jpg')
         self.deleteExist('assets/artwork/originalArtWork.jpg')
-        self.audibleComboBox = []
-        self.ffComboBox = []
-        self.goodreadsComboBox = []
 
     def button_configure(self):
         self.audible_data_post.clicked.connect(self.audible_save)
@@ -413,25 +418,23 @@ class Ui_MainWindow(object):
         self.googlePullButton.clicked.connect(self.google_save)
         self.saveSettingsButton.clicked.connect(self.save_settings)
         self.search_button.clicked.connect(self.run_searches)
-        #self.saveButton.clicked.connect(self.SaveBtn)
+        # self.saveButton.clicked.connect(self.SaveBtn)
         self.open_folder_button.clicked.connect(self.file_combobox_update)
 
     def combobox_configure(self):
         self.file_ComboBox.currentIndexChanged.connect(self.file_combobox_select)
-        self.google_combobox.currentIndexChanged.connect(self.google_ComboBox_select)
-    # self.goodreadsComboBox.currentIndexChanged.connect(self.grComboBoxSelect)
-    # self.audibleComboBox.currentIndexChanged.connect(self.aComboBoxSelect)
-    #  self.ffComboBox.currentIndexChanged.connect(self.ffComboBoxSelect)
+        self.google_combobox.currentIndexChanged.connect(self.combobox_google_select)
 
-
-
+    # self.goodreads_combobox.currentIndexChanged.connect(self.grComboBoxSelect)
+    # self.audible_combobox.currentIndexChanged.connect(self.aComboBoxSelect)
+    #  self.ff_combobox.currentIndexChanged.connect(self.ff_comboboxSelect)
 
     def audible_save(self):
         self.finalTrack.setText(self.audibleTitleSearch.text())
         self.finalArtist.setText(self.audibleAuthorSearch.text())
         self.finalAlbum.setText(self.audibleSeriesSearch.text())
         self.finalTrackNo.setText(self.audibleTrackNoSearch.text())
-        # artwork transfer
+        shutil.copy('assets/artwork/audibleArtWork.jpg', 'assets/artwork/finishedArtWork.jpg')
 
     def goodreads_save(self):
         self.finalTrack.setText(self.goodreads_title.text())
@@ -450,6 +453,7 @@ class Ui_MainWindow(object):
         self.finalArtist.setText(self.google_author.text())
         self.finalAlbum.setText(self.google_series.text())
         self.finalTrackNo.setText(self.google_book_number.text())
+        shutil.copy('assets/artwork/googleArtWork.jpg', 'assets/artwork/finishedArtWork.jpg')
 
     def image_refresh(self):
         self.googleArtWork.setPixmap(
@@ -548,14 +552,13 @@ class Ui_MainWindow(object):
                 image_file.close()
             self.image_refresh()
 
-    def google_combobox_update(self, book_list):
-        self.google_combobox.clear()
-        for book in book_list:
-            self.google_combobox.addItem(book['id'])
-
-    def google_ComboBox_select(self):
-        if self.google_combobox.currentIndex() >= 0:
+    def combobox_google_select(self):
+        print(self.file_ComboBox.currentIndex() >= 0)
+        print(self.file_ComboBox.currentText() != "")
+        if self.file_ComboBox.currentIndex() >= 0 and self.file_ComboBox.currentText() != "":
+            print(self.google_combobox.currentIndex())
             record = Functions.database_get(self.google_combobox.currentText(), "googlebooks")
+            print(record)
             self.google_title.setText(record[1])
             self.google_author.setText(record[2])
             self.google_series.setText(record[4])
@@ -566,14 +569,21 @@ class Ui_MainWindow(object):
             self.image_refresh()
             self.googleFuzzyAV.setText(str(self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])))
 
+    def google_combobox_update(self, book_list):
+        self.google_combobox.blockSignals(True)
+        self.google_combobox.clear()
+        self.google_combobox.blockSignals(False)
+        for book in book_list:
+            self.google_combobox.addItem(book['id'])
+
     def run_searches(self):
         searchstring = self.file_title.text() + " " + self.ff_author.text() + " " + self.file_series.text()
         if self.google_search_toggle.isChecked():
             book_list = Functions.google_search(searchstring)
             self.google_combobox_update(book_list)
         # if self.audible_search_toggle.isChecked():
-        # book_list = Functions.google_search(searchstring)
-        # self.google_combobox_update(book_list)
+        #    book_list = Functions.google_search(searchstring)
+        #   self.google_combobox_update(book_list)
 
     def fuzzyRateFeild(self, new_info):
         file_info: str = self.file_title.text() + ' ' + self.file_author.text() + ' ' + self.file_series.text()

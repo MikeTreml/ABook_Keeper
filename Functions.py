@@ -8,7 +8,7 @@ import api_keys
 def try_check(book, string1):
     result = ""
     try:
-        result = book[string1]
+        result = string_cleaner_database(book[string1])
     except:
         result = ""
     return result
@@ -17,7 +17,7 @@ def try_check(book, string1):
 def try_check2(book, string1, string2):
     result = ""
     try:
-        result = book[string1][string2]
+        result = string_cleaner_database(book[string1][string2])
     except:
         result = ""
     return result
@@ -26,7 +26,7 @@ def try_check2(book, string1, string2):
 def try_check3(book, string1, string2, string3):
     result = ""
     try:
-        result = book[string1][string2][string3]
+        result = string_cleaner_database(book[string1][string2][string3])
     except:
         result = ""
     return result
@@ -40,6 +40,7 @@ def google_search(input_string):
     google_request = requests.get(string_builder)
 
     data = google_request.json()
+    print(data)
     for book in data["items"]:
         print(book)
         title = try_check2(book, 'volumeInfo', 'title')
@@ -67,8 +68,6 @@ def google_database_post(book_list):
     db_file = "audiobookspython.db"
     con = sqlite3.connect(db_file)
     for book in book_list:
-        print(book)
-        print()
         con.execute(
             'INSERT INTO googlebooks (id, title, subtitle, authors, release_date, publisher,description,image_url) '
             'VALUES (:id, :title, :subtitle, :authors, :release_date, :publisher,:description,:image_url);', book)
@@ -80,6 +79,12 @@ def google_database_post(book_list):
 def database_get(id, table):
     con = sqlite3.connect("audiobookspython.db")
     c = con.cursor()
+    print(id)
+    print(table)
     c.execute("Select * from " + table + " where id='" + id + "'")
     row = c.fetchone()
     return row
+
+
+def string_cleaner_database(string):
+    return string.replace("'", "`")
