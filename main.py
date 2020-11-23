@@ -1,5 +1,6 @@
 import os
 import pathlib
+import shutil
 import sqlite3
 import urllib.request as req
 
