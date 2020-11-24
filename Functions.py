@@ -1,3 +1,5 @@
+import os
+import pathlib
 import re
 import sqlite3
 
@@ -156,3 +158,18 @@ def database_get(id, table):
 
 def string_cleaner_database(string):
     return string.replace("'", "`")
+
+
+def delete_artwork():
+    deleteExist('assets/artwork/goodreads_artwork.jpg')
+    deleteExist('assets/artwork/finished_artwork.jpg')
+    deleteExist('assets/artwork/google_artwork.jpg')
+    deleteExist('assets/artwork/audible_artwork.jpg')
+    deleteExist('assets/artwork/ff_artwork.jpg')
+    deleteExist('assets/artwork/original_artwork.jpg')
+
+
+def deleteExist(path):
+    file = pathlib.Path(path)
+    if file.exists():
+        os.remove(path)
