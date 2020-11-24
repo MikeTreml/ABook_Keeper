@@ -51,7 +51,7 @@ class Ui_MainWindow(object):
         self.ff_URL = QLineEdit(self.main)
         self.file_series = QLineEdit(self.main)
         self.file_author = QLineEdit(self.main)
-        self.file_ComboBox = QComboBox(self.main)
+        self.file_combobox = QComboBox(self.main)
         self.FileLocation = QLineEdit(self.settings)
         self.file_title = QLineEdit(self.main)
         self.file_book_number = QLineEdit(self.main)
@@ -112,8 +112,7 @@ class Ui_MainWindow(object):
         self.label_9 = QLabel(self.settings)
         self.open_folder_button = QPushButton(self.main)
         self.original_artwork = QLabel(self.main)
-        self.saveButton = QPushButton(self.centralwidget)
-        self.saveButton_2 = QPushButton(self.main)
+        self.save_button = QPushButton(self.main)
         self.SaveFormatText = QLineEdit(self.settings)
         self.save_settings_button = QPushButton(self.settings)
         self.search_button = QPushButton(self.main)
@@ -206,7 +205,7 @@ class Ui_MainWindow(object):
         self.ff_URL.setInputMethodHints(QtCore.Qt.ImhNone)
         self.file_series.setGeometry(QtCore.QRect(580, 221, 241, 20))
         self.file_author.setGeometry(QtCore.QRect(580, 258, 241, 20))
-        self.file_ComboBox.setGeometry(QtCore.QRect(110, 16, 451, 22))
+        self.file_combobox.setGeometry(QtCore.QRect(110, 16, 451, 22))
         self.FileLocation.setGeometry(QtCore.QRect(10, 50, 529, 21))
         self.file_title.setGeometry(QtCore.QRect(580, 183, 241, 20))
         self.file_book_number.setGeometry(QtCore.QRect(580, 143, 61, 20))
@@ -291,8 +290,8 @@ class Ui_MainWindow(object):
         self.original_artwork.setOpenExternalLinks(False)
         self.original_artwork.setScaledContents(True)
         self.original_artwork.setStyleSheet("border-color: rgb(180, 180, 180);")
-        self.saveButton_2.setGeometry(QtCore.QRect(760, 290, 71, 31))
-        self.saveButton.setGeometry(QtCore.QRect(1060, -90, 81, 27))
+        self.save_button.setGeometry(QtCore.QRect(760, 290, 71, 31))
+
         self.SaveFormatText.setGeometry(QtCore.QRect(10, 170, 529, 21))
         self.save_settings_button.setGeometry(QtCore.QRect(0, 210, 113, 32))
         self.search_button.setGeometry(QtCore.QRect(573, 3, 71, 27))
@@ -310,7 +309,7 @@ class Ui_MainWindow(object):
         self.button_configure()
         self.restore_settings()
         self.combobox_configure()
-        self.delete_artwork()
+        Functions.delete_artwork()
         self.image_refresh()
 
     def retranslateUi(self, MainWindow):
@@ -358,8 +357,7 @@ class Ui_MainWindow(object):
         self.label_9.setText(_translate("MainWindow", "Audiobooks location"))
         self.label.setText(_translate("MainWindow", "Title"))
         self.open_folder_button.setText(_translate("MainWindow", "Open Folder"))
-        self.saveButton_2.setText(_translate("MainWindow", "SAVE"))
-        self.saveButton.setText(_translate("MainWindow", "Save"))
+        self.save_button.setText(_translate("MainWindow", "SAVE"))
         self.save_settings_button.setText(_translate("MainWindow", "Save Settings"))
         self.search_button.setText(_translate("MainWindow", "Search"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.main), _translate("MainWindow", "Main"))
@@ -402,15 +400,7 @@ class Ui_MainWindow(object):
         # self.ff_combobox = []
         # self.goodreads_combobox = []
         # self.google_combobox = []
-        self.delete_artwork()
-
-    def delete_artwork(self):
-        self.deleteExist('assets/artwork/goodreads_artwork.jpg')
-        self.deleteExist('assets/artwork/finished_artwork.jpg')
-        self.deleteExist('assets/artwork/google_artwork.jpg')
-        self.deleteExist('assets/artwork/audible_artwork.jpg')
-        self.deleteExist('assets/artwork/ff_artwork.jpg')
-        self.deleteExist('assets/artwork/original_artwork.jpg')
+        Functions.delete_artwork()
 
     def button_configure(self):
         self.audible_post_button.clicked.connect(self.audible_save)
@@ -419,16 +409,15 @@ class Ui_MainWindow(object):
         self.google_post_button.clicked.connect(self.google_save)
         self.save_settings_button.clicked.connect(self.save_settings)
         self.search_button.clicked.connect(self.run_searches)
-        # self.saveButton.clicked.connect(self.SaveBtn)
+        self.save_button.clicked.connect(self.save)
         self.open_folder_button.clicked.connect(self.file_combobox_update)
 
     def combobox_configure(self):
-        self.file_ComboBox.currentIndexChanged.connect(self.file_combobox_select)
+        self.file_combobox.currentIndexChanged.connect(self.file_combobox_select)
         self.google_combobox.currentIndexChanged.connect(self.combobox_google_select)
         self.audible_combobox.currentIndexChanged.connect(self.combobox_audible_select)
-    # self.goodreads_combobox.currentIndexChanged.connect(self.grComboBoxSelect)
-
-    #  self.ff_combobox.currentIndexChanged.connect(self.ff_comboboxSelect)
+        # self.goodreads_combobox.currentIndexChanged.connect(self.grComboBoxSelect)
+        #  self.ff_combobox.currentIndexChanged.connect(self.ff_comboboxSelect)
 
     def audible_save(self):
         self.final_title.setText(self.audible_title.text())
@@ -476,11 +465,6 @@ class Ui_MainWindow(object):
             (QtGui.QPixmap("assets/artwork/original_artwork.jpg")).scaled(self.original_artwork.size(),
                                                                           QtCore.Qt.KeepAspectRatio))
 
-    def deleteExist(self, path):
-        file = pathlib.Path(path)
-        if file.exists():
-            os.remove(path)
-
     def file_locations(self):
         return self.FileLocation.text()
 
@@ -496,8 +480,6 @@ class Ui_MainWindow(object):
         cur = con.cursor()
         c = cur.execute("SELECT * FROM settings")
         settings = c.fetchall()
-        print(settings[0])
-        print()
         # ** needs a try catch if empty
         self.FileLocation.setText(settings[0][1])
         self.FinishedLocation.setText(settings[1][1])
@@ -515,18 +497,52 @@ class Ui_MainWindow(object):
         con.commit()
         # **Create messagebox
 
-    def file_combobox_update(self):
-        self.file_ComboBox.clear()
-        list_of_files = []
-        for (dir_path, dir_names, filenames) in os.walk(self.file_locations()):
-            for file in filenames:
-                if "mp3" in file.lower():
-                    self.file_ComboBox.addItem(file)
+    def save(self):
+        audiofile = eyed3.load(self.file_combobox.currentText())
+        audiofile.tag.artist = self.file_author.text()
+        audiofile.tag.album = self.final_series.text()
+        audiofile.tag.title = self.file_title.text()
+        audiofile.tag.composer = self.ABdict['A_narrator']
+        audiofile.tag.release_date = self.ABdict['A_releaseDate']
+        audiofile.tag.album_artist = self.ABdict['A_publisher']
+        audiofile.tag.genre = self.ABdict['A_genre']
+        audiofile.tag.comments.set(str(self.ABdict['A_rating']))
+
+        # post twice for the same artwork. one for file view and one shows up in itunes
+        imagedata = open('D:\AudibleApp\PICaudible.jpg', "rb").read()
+        audiofile.tag.images.set(1, imagedata, 'image/jpeg', u"icon 2")
+        audiofile.tag.save()
+
+        audiofile1 = eyed3.load(self.fileComboBox.currentText())
+        audiofile1.tag.images.set(3, imagedata, 'image/jpeg', u'front 3')
+        audiofile1.tag.save()
+
+        locat = self.FinishedLocation.text()
+
+        dst = locat + '\\' + os.path.basename(self.fileComboBox.currentText())
+        shutil.move(self.fileComboBox.currentText(), dst)
+        extension = os.path.splitext(os.path.basename(self.fileComboBox.currentText()))[1]
+
+        new_filename = "{0}\{1} - {2} {3}{5}".format(locat, self.final_series.text().replace(':', ''),
+                                                     self.final_book_number.text().replace(':', ''),
+                                                     self.final_title.text().replace('\\', ''),
+                                                     self.audible_author.text().replace(':', ''), extension)
+        print('dst', dst)
+        print(new_filename)
+        file = pathlib.Path(new_filename)
+        if file.exists():
+            print("File exist")
+        else:
+            os.rename(dst, new_filename)
+
+        self.clear_fields()
+        self.file_combobox.removeItem(self.file_combobox.currentIndex())
+        print('files left ', self.file_combobox.count())
 
     def file_combobox_select(self):
         self.clear_fields()
-        if self.file_ComboBox.currentText() != "":
-            audio_file = eyed3.load(os.path.join(self.file_locations(), self.file_ComboBox.currentText()))
+        if self.file_combobox.currentText() != "":
+            audio_file = eyed3.load(os.path.join(self.file_locations(), self.file_combobox.currentText()))
             title = str(audio_file.tag.title)
             author = str(audio_file.tag.artist)
             series = str(audio_file.tag.album)
@@ -585,6 +601,14 @@ class Ui_MainWindow(object):
                 print("image issue")
             self.image_refresh()
             self.audible_fuzzy.setText(str(self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])))
+
+    def file_combobox_update(self):
+        self.file_combobox.clear()
+        list_of_files = []
+        for (dir_path, dir_names, filenames) in os.walk(self.file_locations()):
+            for file in filenames:
+                if "mp3" in file.lower():
+                    self.file_combobox.addItem(file)
 
     def google_combobox_update(self, book_list):
         self.google_combobox.blockSignals(True)
