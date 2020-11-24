@@ -46,7 +46,9 @@ def soup_check(soup):
 
 
 def audible_search(input_string):
-    url = "https://www.audible.com/search?keywords=" + input_string
+    series = ""
+    book_number = ""
+    url = "https://www.audible.com/search?ref=a_search_l1_feature_six_browse-bin_0&feature_six_browse-bin=18685580011&keywords=" + input_string
     page_source = requests.get(url)
     soup = BeautifulSoup(page_source.text, 'lxml')
     books = soup.find_all('li', attrs={"class": "bc-list-item productListItem"})
@@ -55,7 +57,9 @@ def audible_search(input_string):
         website = book.find('a', attrs={"class": "bc-link bc-color-link"})['href']
         website_split = website.split('/')
         id = website_split[-1]
-        img_url = book.find('img', attrs={"id": "nojs_img_"})['src']
+        image_url = book.find('img', attrs={"id": "nojs_img_"})['src']
+        print(image_url)
+
         title = soup_check(book.find('h2', attrs={"class": "bc-heading bc-color-base bc-text-bold"}))
         author = soup_check(book.find('li', attrs={"class": "bc-list-item authorLabel"})).replace("By:", "")
         narrator = soup_check(book.find('li', attrs={"class": "bc-list-item narratorLabel"})).replace("Narrated by:",
@@ -63,10 +67,16 @@ def audible_search(input_string):
         subtitle = soup_check(book.find('li', attrs={"class": "bc-list-item subtitle"})).replace("Series:", "")
 
         series_book = soup_check(book.find('li', attrs={"class": "bc-list-item seriesLabel"})).replace("Series:",
-                                                                                                       " Series,", "")
-        split_series_book = series_book.split("Book")
-        book_number = split_series_book[1]
-        series = split_series_book[0]
+                                                                                                       "").replace(
+            " Series,", "")
+        print(series_book)
+        if series_book != "":
+            split_series_book = series_book.split("Book ")
+            print(split_series_book)
+            series = split_series_book[0]
+            print(len(split_series_book))
+            if len(split_series_book) > 1:
+                book_number = split_series_book[1]
         length = soup_check(book.find('li', attrs={"class": "bc-list-item runtimeLabel"})).replace("Length: ", "")
         date = soup_check(book.find('li', attrs={"class": "bc-list-item releaseDateLabel"})).replace("Release date:",
                                                                                                      "")
@@ -76,7 +86,7 @@ def audible_search(input_string):
         web_url = "https://www.audible.com/pd/" + id
 
         book_list.append({"id": id, "title": title, "author": author, "narrator": narrator, "series": series,
-                          "book_number": book_number, "image_url": img_url, "length": length, "release_date": date,
+                          "book_number": book_number, "image_url": image_url, "length": length, "release_date": date,
                           "web_url": web_url, "rating": rating, "subtitle": subtitle, "language": language})
     print(book_list)
     audible_database_post(book_list)
@@ -88,8 +98,8 @@ def audible_database_post(book_list):
     con = sqlite3.connect(db_file)
     for book in book_list:
         con.execute(
-            'INSERT INTO audible (id, title, author, narrator, series, book_number, length, release_date, web_url, rating, subtitle, language) '
-            'VALUES (:id, :title, :author, :narrator, :series, :book_number, :length, :release_date, :web_url, :rating, :subtitle, :language);',
+            'INSERT INTO audible (id, title, author, narrator, series, book_number, image_url, length, release_date, web_url, rating, subtitle, language) '
+            'VALUES (:id, :title, :author, :narrator, :series, :book_number, :image_url, :length, :release_date, :web_url, :rating, :subtitle, :language);',
             book)
     con.commit()
 
