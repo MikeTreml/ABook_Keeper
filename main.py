@@ -1,23 +1,33 @@
+import operator
 import os
+import os.path
 import pathlib
 import shutil
 import sqlite3
 import ssl
 import urllib.request as req
+from os import path
 
 import eyed3
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt, QMetaObject, QCoreApplication, QRect, QSize
-from PyQt5.QtGui import QPalette, QColor, QPixmap, QFont
+from PyQt5.QtCore import Qt, QMetaObject, QCoreApplication, QSize
+from PyQt5.QtGui import QPalette, QColor, QFont
 from PyQt5.QtWidgets import QApplication, QPushButton, QMainWindow, QWidget, QLineEdit, QLabel, QGroupBox, QComboBox, \
     QTabWidget, QCheckBox
 from fuzzywuzzy import fuzz
 
 import Functions
+import ui_items
+
+audible_artwork = 'assets/artwork/audible_artwork.jpg'
+google_artwork = 'assets/artwork/google_artwork.jpg'
+ff_artwork = 'assets/artwork/ff_artwork.jpg'
+goodreads_artwork = 'assets/artwork/goodreads_artwork.jpg'
+finished_artwork = 'assets/artwork/finished_artwork.jpg'
+database = "audiobookspython.db"
 
 
 class Ui_MainWindow(object):
-
     def __init__(self):
         self.main = QWidget()
         self.centralwidget = QWidget(MainWindow)
@@ -28,26 +38,26 @@ class Ui_MainWindow(object):
         self.groupBox_5 = QGroupBox(self.main)
         self.groupBox_2 = QGroupBox(self.main)
         self.groupBox = QGroupBox(self.main)
-
         self.audible_artwork = QLabel(self.main)
-        self.audible_author = QLineEdit(self.main)
+        self.audible_author = QPushButton(self.main)
+
         self.audible_combobox = QComboBox(self.main)
         self.audible_fuzzy = QLineEdit(self.main)
         self.audible_post_button = QPushButton(self.main)
         self.audible_search_toggle = QCheckBox(self.main)
-        self.audible_series = QLineEdit(self.main)
-        self.audible_title = QLineEdit(self.main)
-        self.audible_book_number = QLineEdit(self.main)
+        self.audible_series = QPushButton(self.main)
+        self.audible_title = QPushButton(self.main)
+        self.audible_book_number = QPushButton(self.main)
         self.audible_URL = QLineEdit(self.main)
         self.ff_artwork = QLabel(self.main)
-        self.ff_author = QLineEdit(self.main)
+        self.ff_author = QPushButton(self.main)
         self.ff_combobox = QComboBox(self.main)
         self.ff_fuzzy = QLineEdit(self.main)
         self.ff_post_button = QPushButton(self.main)
         self.ff_search_toggle = QCheckBox(self.main)
-        self.ff_series = QLineEdit(self.main)
-        self.ff_title = QLineEdit(self.main)
-        self.ff_book_number = QLineEdit(self.main)
+        self.ff_series = QPushButton(self.main)
+        self.ff_title = QPushButton(self.main)
+        self.ff_book_number = QPushButton(self.main)
         self.ff_URL = QLineEdit(self.main)
         self.file_series = QLineEdit(self.main)
         self.file_author = QLineEdit(self.main)
@@ -62,24 +72,29 @@ class Ui_MainWindow(object):
         self.finished_artwork = QLabel(self.main)
         self.FinishedLocation = QLineEdit(self.settings)
         self.goodreads_artwork = QLabel(self.main)
-        self.goodreads_author = QLineEdit(self.main)
+        self.goodreads_author = QPushButton(self.main)
         self.goodreads_combobox = QComboBox(self.main)
         self.goodreads_fuzzy = QLineEdit(self.main)
         self.goodreads_search_toggle = QCheckBox(self.main)
         self.goodreads_post_button = QPushButton(self.main)
-        self.goodreads_series = QLineEdit(self.main)
-        self.goodreads_title = QLineEdit(self.main)
-        self.goodreads_book_number = QLineEdit(self.main)
+        self.goodreads_series = QPushButton(self.main)
+        self.goodreads_title = QPushButton(self.main)
+        self.goodreads_book_number = QPushButton(self.main)
         self.goodreads_URL = QLineEdit(self.main)
         self.google_artwork = QLabel(self.main)
-        self.google_author = QLineEdit(self.main)
+        self.google_author = QPushButton(self.main)
+        self.google_artwork_button = QPushButton(self.main)
+        self.audible_artwork_button = QPushButton(self.main)
+        self.ff_artwork_button = QPushButton(self.main)
+        self.goodreads_artwork_button = QPushButton(self.main)
+
         self.google_search_toggle = QCheckBox(self.main)
         self.google_combobox = QComboBox(self.main)
         self.google_fuzzy = QLineEdit(self.main)
         self.google_post_button = QPushButton(self.main)
-        self.google_series = QLineEdit(self.main)
-        self.google_title = QLineEdit(self.main)
-        self.google_book_number = QLineEdit(self.main)
+        self.google_series = QPushButton(self.main)
+        self.google_title = QPushButton(self.main)
+        self.google_book_number = QPushButton(self.main)
         self.label = QLabel(self.main)
         self.label_10 = QLabel(self.main)
         self.label_12 = QLabel(self.main)
@@ -116,8 +131,10 @@ class Ui_MainWindow(object):
         self.SaveFormatText = QLineEdit(self.settings)
         self.save_settings_button = QPushButton(self.settings)
         self.search_button = QPushButton(self.main)
+
         self.tab = QWidget()
         self.tabWidget = QTabWidget(self.centralwidget)
+        self.plainTextEdit = QtWidgets.QPlainTextEdit(self.settings)
 
     def setupUi(self, MainWindow):
         font = QFont()
@@ -133,7 +150,6 @@ class Ui_MainWindow(object):
         palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
         palette.setColor(QPalette.ToolTipBase, Qt.black)
         palette.setColor(QPalette.ToolTipText, Qt.white)
-
         palette.setColor(QPalette.Text, Qt.white)
         palette.setColor(QPalette.Button, QColor(50, 50, 50))
         palette.setColor(QPalette.ButtonText, Qt.white)
@@ -142,193 +158,53 @@ class Ui_MainWindow(object):
         palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
         palette.setColor(QPalette.HighlightedText, Qt.black)
         app.setPalette(palette)
-
-        self.groupBox.setGeometry(QRect(570, 0, 250, 290))
-        self.groupBox.setStyleSheet("background-color: rgba(0, 0, 0, 100);")
-
-        self.groupBox_5.setGeometry(QRect(5, 450, 560, 130))
-        self.groupBox_5.setStyleSheet("background-color: rgba(10, 95, 255, 100);")
-
-        self.groupBox_3.setGeometry(QRect(5, 315, 560, 130))
-        self.groupBox_3.setStyleSheet("background-color: rgba(144, 113, 76, 100);")
-
-        self.groupBox_6.setGeometry(QRect(5, 180, 560, 130))
-        self.groupBox_6.setStyleSheet("background-color: rgba(254, 172, 12, 100);")
-
-        self.groupBox_4.setGeometry(QRect(5, 45, 560, 130))
-        self.groupBox_4.setStyleSheet("background-color: rgba(157, 51, 214, 70);")
-        self.groupBox_2.setGeometry(QRect(570, 295, 250, 290))
-        self.groupBox_2.setStyleSheet("background-color: rgba(41, 200, 50, 80);")
-
-        self.audible_post_button.setStyleSheet("background-color: rgb(118, 81, 8);")
-        self.ff_post_button.setStyleSheet("background-color: rgb(7, 44, 108);")
-        self.goodreads_post_button.setStyleSheet("background-color: rgb(75, 59, 39);")
-        self.google_post_button.setStyleSheet("background-color: rgb(71, 24, 95);")
+        ui_items.set_ui_readonly(self)
+        ui_items.set_ui_font(self)
+        ui_items.set_ui_size(self)
+        ui_items.set_ui_color(self)
 
         self.tabWidget.addTab(self.main, "")
         self.tabWidget.addTab(self.tab, "")
         self.tabWidget.addTab(self.settings, "")
 
-        self.audible_author.setGeometry(QRect(10, 228, 190, 20))
-        self.audible_combobox.setGeometry(QRect(10, 285, 420, 22))
-        self.audible_series.setGeometry(QRect(210, 228, 220, 20))
-        self.audible_title.setGeometry(QRect(180, 198, 250, 20))
-        self.audible_post_button.setGeometry(QRect(730, 340, 70, 25))
-        self.audible_book_number.setGeometry(QRect(130, 198, 40, 20))
-        self.audible_URL.setGeometry(QRect(10, 260, 420, 20))
-
-        self.ff_post_button.setGeometry(QRect(590, 340, 120, 25))
-
-        self.google_post_button.setGeometry(QRect(730, 380, 70, 25))
-
-        self.save_settings_button.setGeometry(QRect(0, 210, 113, 25))
-        self.search_button.setGeometry(QRect(650, 60, 71, 30))
-        self.save_button.setGeometry(QRect(680, 420, 70, 30))
-        self.open_folder_button.setGeometry(QRect(5, 15, 90, 25))
-        self.search_button.setStyleSheet("background-color: rgb(120, 120, 120);")
-
+        # self.audible_book_number.setAlignment(Qt.AlignCenter)
+        self.audible_fuzzy.setAlignment(Qt.AlignCenter)
         self.audible_search_toggle.setCheckable(True)
         self.audible_search_toggle.setChecked(True)
-
-        self.audible_book_number.setAlignment(Qt.AlignCenter)
-
         self.audible_URL.setInputMethodHints(Qt.ImhNone)
-        self.audible_fuzzy.setAlignment(Qt.AlignCenter)
-        self.audible_fuzzy.setStyleSheet("background-color: green")
-
-        self.ff_combobox.setGeometry(QRect(10, 555, 420, 22))
-
-        self.ff_author.setGeometry(QRect(10, 498, 190, 20))
-
-        self.ff_series.setGeometry(QRect(210, 498, 220, 20))
-        self.ff_title.setGeometry(QRect(180, 468, 250, 20))
-        self.ff_book_number.setGeometry(QRect(130, 468, 40, 20))
-        self.ff_URL.setGeometry(QRect(10, 530, 420, 20))
-
-        self.file_series.setGeometry(QRect(580, 221, 230, 20))
-        self.file_author.setGeometry(QRect(580, 258, 230, 20))
-        self.file_combobox.setGeometry(QRect(110, 16, 230, 22))
-        self.file_title.setGeometry(QRect(580, 183, 230, 20))
-        self.file_book_number.setGeometry(QRect(580, 143, 60, 20))
-
-        self.final_series.setGeometry(QRect(580, 511, 230, 20))
-        self.final_author.setGeometry(QRect(580, 546, 230, 20))
-        self.final_title.setGeometry(QRect(580, 476, 230, 20))
-        self.final_book_number.setGeometry(QRect(580, 439, 60, 20))
-
-        self.FileLocation.setGeometry(QRect(10, 50, 529, 21))
-
-        self.ff_book_number.setAlignment(Qt.AlignCenter)
-        self.ff_URL.setInputMethodHints(Qt.ImhNone)
+        # self.ff_book_number.setAlignment(Qt.AlignCenter)
         self.ff_fuzzy.setAlignment(Qt.AlignCenter)
-        # artwork
-        self.finished_artwork.setGeometry(QRect(835, 295, 290, 290))
-        self.original_artwork.setGeometry(QRect(835, 0, 290, 290))
-
-        self.google_artwork.setGeometry(QRect(432, 45, 130, 130))
-        self.ff_artwork.setGeometry(QRect(432, 450, 130, 130))
-        self.audible_artwork.setGeometry(QRect(432, 180, 130, 130))
-        self.goodreads_artwork.setGeometry(QRect(432, 315, 130, 130))
-
-        self.FinishedLocation.setGeometry(QRect(10, 110, 529, 21))
-
         self.ff_search_toggle.setCheckable(True)
         self.ff_search_toggle.setChecked(False)
+        self.ff_URL.setInputMethodHints(Qt.ImhNone)
+        # self.goodreads_book_number.setAlignment(Qt.AlignCenter)
         self.goodreads_fuzzy.setAlignment(Qt.AlignCenter)
-        self.goodreads_author.setGeometry(QRect(10, 363, 190, 20))
-        self.goodreads_combobox.setGeometry(QRect(10, 420, 420, 22))
-        self.goodreads_post_button.setGeometry(QRect(590, 380, 100, 25))
-
-        self.goodreads_series.setGeometry(QRect(210, 363, 220, 20))
-        self.goodreads_title.setGeometry(QRect(180, 333, 250, 20))
-        self.goodreads_book_number.setGeometry(QRect(130, 333, 40, 20))
-        self.goodreads_URL.setGeometry(QRect(10, 395, 420, 20))
-
         self.goodreads_search_toggle.setCheckable(True)
         self.goodreads_search_toggle.setChecked(False)
-
-        self.google_author.setGeometry(QRect(10, 93, 190, 20))
-        self.google_combobox.setGeometry(QRect(10, 150, 420, 22))
-
-        self.google_fuzzy.setGeometry(QRect(535, 48, 24, 20))
-        self.goodreads_fuzzy.setGeometry(QRect(535, 318, 24, 20))
-        self.ff_fuzzy.setGeometry(QRect(535, 453, 24, 20))
-        self.audible_fuzzy.setGeometry(QRect(535, 183, 24, 20))
-
-        self.audible_search_toggle.setGeometry(QRect(8, 178, 70, 25))
-        self.ff_search_toggle.setGeometry(QRect(8, 447, 115, 25))
-        self.goodreads_search_toggle.setGeometry(QRect(8, 313, 100, 25))
-        self.google_search_toggle.setGeometry(QRect(8, 42, 65, 25))
-
+        # self.google_book_number.setAlignment(Qt.AlignCenter)
+        self.google_fuzzy.setAlignment(Qt.AlignCenter)
         self.google_search_toggle.setCheckable(True)
         self.google_search_toggle.setChecked(False)
-
-        self.goodreads_book_number.setAlignment(Qt.AlignCenter)
-        self.google_fuzzy.setAlignment(Qt.AlignCenter)
-        self.google_book_number.setAlignment(Qt.AlignCenter)
-
-        self.google_series.setGeometry(QRect(210, 93, 220, 20))
-        self.google_title.setGeometry(QRect(180, 63, 250, 20))
-        self.google_book_number.setGeometry(QRect(130, 63, 40, 20))
-        self.label_10.setGeometry(QRect(580, 123, 71, 20))
-        self.label_12.setGeometry(QRect(581, 421, 41, 20))
-        self.label_14.setGeometry(QRect(20, 90, 529, 15))
-
-        self.label_15.setGeometry(QRect(20, 150, 529, 15))
         self.label_14.setMaximumSize(QSize(16777215, 15))
         self.label_15.setMaximumSize(QSize(16777215, 15))
-        self.label_16.setGeometry(QRect(581, 493, 41, 20))
-        self.label_18.setGeometry(QRect(583, 529, 51, 20))
-        self.label_2.setGeometry(QRect(580, 203, 41, 20))
-        self.label_3.setGeometry(QRect(580, 240, 51, 20))
-        self.label_4.setGeometry(QRect(580, 460, 61, 20))
-        self.label_44.setGeometry(QRect(131, 48, 41, 20))
-        self.label_45.setGeometry(QRect(13, 78, 51, 19))
-        self.label_46.setGeometry(QRect(13, 213, 51, 19))
-        self.label_47.setGeometry(QRect(131, 184, 41, 20))
-        self.label_48.setGeometry(QRect(131, 318, 41, 20))
-        self.label_49.setGeometry(QRect(13, 348, 51, 19))
-        self.label_50.setGeometry(QRect(13, 483, 51, 19))
-        self.label_51.setGeometry(QRect(131, 453, 41, 20))
-        self.label_54.setGeometry(QRect(182, 48, 61, 20))
-        self.label_55.setGeometry(QRect(182, 184, 61, 20))
-        self.label_56.setGeometry(QRect(182, 318, 61, 20))
-        self.label_58.setGeometry(QRect(13, 245, 21, 20))
-        self.label_59.setGeometry(QRect(182, 454, 61, 20))
-        self.label_60.setGeometry(QRect(211, 78, 40, 20))
-        self.label_61.setGeometry(QRect(211, 213, 40, 20))
-        self.label_62.setGeometry(QRect(211, 483, 40, 20))
-        self.label_64.setGeometry(QRect(211, 348, 40, 20))
-        self.label_65.setGeometry(QRect(13, 380, 21, 20))
-        self.label_66.setGeometry(QRect(13, 515, 25, 20))
-        self.label_9.setGeometry(QRect(20, 30, 529, 15))
         self.label_9.setMaximumSize(QSize(16777215, 15))
-        self.label.setGeometry(QRect(582, 163, 61, 20))
-
-        self.SaveFormatText.setGeometry(QRect(10, 170, 529, 21))
-
+        self.plainTextEdit.setObjectName("plainTextEdit")
+        self.retranslateUi(MainWindow)
+        self.tabWidget.setCurrentIndex(0)
         self.tabWidget.setElideMode(Qt.ElideLeft)
-        self.tabWidget.setGeometry(QRect(0, 0, 1140, 620))
         self.tabWidget.setTabPosition(QTabWidget.North)
         self.tabWidget.setTabShape(QTabWidget.Rounded)
         self.tabWidget.setUsesScrollButtons(False)
 
-        self.plainTextEdit = QtWidgets.QPlainTextEdit(self.settings)
-        self.plainTextEdit.setGeometry(QRect(120, 200, 671, 221))
-        self.plainTextEdit.setObjectName("plainTextEdit")
-        self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
-
         # added by Mike Treml
+        ui_items.set_ui_button(self)
         self.button_configure()
         self.restore_settings()
         self.combobox_configure()
         Functions.delete_artwork()
-        self.image_refresh()
+        Functions.image_refresh(self)
 
     def retranslateUi(self, MainWindow):
-        font = QFont()
-        font.setPointSize(9)
         _translate = QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.audible_post_button.setText(_translate("MainWindow", "Audible"))
@@ -342,37 +218,7 @@ class Ui_MainWindow(object):
         self.google_post_button.setText(_translate("MainWindow", "Google"))
         self.groupBox_2.setTitle(_translate("MainWindow", "Final"))
         self.groupBox.setTitle(_translate("MainWindow", "Original"))
-        self.label_10.setFont(font)
-        self.label.setFont(font)
-        self.label_12.setFont(font)
-        self.label_14.setFont(font)
-        self.label_15.setFont(font)
-        self.label_16.setFont(font)
-        self.label_18.setFont(font)
-        self.label_2.setFont(font)
-        self.label_3.setFont(font)
-        self.label_4.setFont(font)
-        self.label_44.setFont(font)
-        self.label_45.setFont(font)
-        self.label_46.setFont(font)
-        self.label_47.setFont(font)
-        self.label_48.setFont(font)
-        self.label_49.setFont(font)
-        self.label_50.setFont(font)
-        self.label_51.setFont(font)
-        self.label_54.setFont(font)
-        self.label_55.setFont(font)
 
-        self.label_56.setFont(font)
-        self.label_58.setFont(font)
-        self.label_59.setFont(font)
-        self.label_60.setFont(font)
-        self.label_61.setFont(font)
-        self.label_62.setFont(font)
-        self.label_64.setFont(font)
-        self.label_65.setFont(font)
-        self.label_66.setFont(font)
-        self.label_9.setFont(font)
         self.label_10.setText(_translate("MainWindow", "Book #"))
         self.label_12.setText(_translate("MainWindow", "Book #"))
         self.label_14.setText(_translate("MainWindow", "Finished Location"))
@@ -454,6 +300,10 @@ class Ui_MainWindow(object):
         self.ff_combobox.clear()
         self.google_combobox.clear()
         self.goodreads_combobox.clear()
+        self.audible_fuzzy.setStyleSheet("background-color: grey")
+        self.google_fuzzy.setStyleSheet("background-color: grey")
+        self.goodreads_fuzzy.setStyleSheet("background-color: grey")
+        self.ff_fuzzy.setStyleSheet("background-color: grey")
 
         # self.audible_combobox = []
         # self.ff_combobox = []
@@ -471,11 +321,100 @@ class Ui_MainWindow(object):
         self.save_button.clicked.connect(self.save)
         self.open_folder_button.clicked.connect(self.file_combobox_update)
 
+        self.ff_book_number.clicked.connect(self.final_number_ff)
+        self.google_book_number.clicked.connect(self.final_number_google)
+        self.goodreads_book_number.clicked.connect(self.final_number_goodreads)
+        self.audible_book_number.clicked.connect(self.final_number_audible)
+
+        self.ff_title.clicked.connect(self.final_title_ff)
+        self.google_title.clicked.connect(self.final_title_google)
+        self.goodreads_title.clicked.connect(self.final_title_goodreads)
+        self.audible_title.clicked.connect(self.final_title_audible)
+
+        self.ff_author.clicked.connect(self.final_author_ff)
+        self.google_author.clicked.connect(self.final_author_google)
+        self.goodreads_author.clicked.connect(self.final_author_goodreads)
+        self.audible_author.clicked.connect(self.final_author_audible)
+
+        self.ff_series.clicked.connect(self.final_series_ff)
+        self.google_series.clicked.connect(self.final_series_google)
+        self.goodreads_series.clicked.connect(self.final_series_goodreads)
+        self.audible_series.clicked.connect(self.final_series_audible)
+
+        self.google_artwork_button.clicked.connect(self.final_artwork_google)
+        self.audible_artwork_button.clicked.connect(self.final_artwork_audible)
+        self.ff_artwork_button.clicked.connect(self.final_artwork_ff)
+        self.goodreads_artwork_button.clicked.connect(self.final_artwork_goodreads)
+
+    def final_artwork_audible(self):
+        if path.exists(audible_artwork):
+            shutil.copy(audible_artwork, finished_artwork)
+
+    def final_artwork_goodreads(self):
+        if path.exists(goodreads_artwork):
+            shutil.copy(goodreads_artwork, finished_artwork)
+
+    def final_artwork_google(self):
+        if path.exists(google_artwork):
+            shutil.copy(google_artwork, finished_artwork)
+
+    def final_artwork_ff(self):
+        if path.exists(ff_artwork):
+            shutil.copy(ff_artwork, finished_artwork)
+
+    def final_series_ff(self):
+        self.final_series.setText(self.ff_series.text())
+
+    def final_series_google(self):
+        self.final_series.setText(self.google_series.text())
+
+    def final_series_goodreads(self):
+        self.final_series.setText(self.goodreads_series.text())
+
+    def final_series_audible(self):
+        self.final_series.setText(self.audible_series.text())
+
+    def final_title_ff(self):
+        self.final_title.setText(self.ff_title.text())
+
+    def final_title_google(self):
+        self.final_title.setText(self.google_title.text())
+
+    def final_title_goodreads(self):
+        self.final_title.setText(self.goodreads_title.text())
+
+    def final_title_audible(self):
+        self.final_title.setText(self.audible_title.text())
+
+    def final_author_ff(self):
+        self.final_author.setText(self.ff_author.text())
+
+    def final_author_google(self):
+        self.final_author.setText(self.google_author.text())
+
+    def final_author_goodreads(self):
+        self.final_author.setText(self.goodreads_author.text())
+
+    def final_author_audible(self):
+        self.final_author.setText(self.audible_author.text())
+
+    def final_number_ff(self):
+        self.final_book_number.setText(self.ff_book_number.text())
+
+    def final_number_google(self):
+        self.final_book_number.setText(self.google_book_number.text())
+
+    def final_number_goodreads(self):
+        self.final_book_number.setText(self.goodreads_book_number.text())
+
+    def final_number_audible(self):
+        self.final_book_number.setText(self.audible_book_number.text())
+
     def combobox_configure(self):
         self.file_combobox.currentIndexChanged.connect(self.file_combobox_select)
         self.google_combobox.currentIndexChanged.connect(self.combobox_google_select)
         self.audible_combobox.currentIndexChanged.connect(self.combobox_audible_select)
-        # self.goodreads_combobox.currentIndexChanged.connect(self.grComboBoxSelect)
+        self.goodreads_combobox.currentIndexChanged.connect(self.combobox_goodreads_select)
         #  self.ff_combobox.currentIndexChanged.connect(self.ff_comboboxSelect)
 
     def audible_save(self):
@@ -483,48 +422,34 @@ class Ui_MainWindow(object):
         self.final_author.setText(self.audible_author.text())
         self.final_series.setText(self.audible_series.text())
         self.final_book_number.setText(self.audible_book_number.text())
-        shutil.copy('assets/artwork/audible_artwork.jpg', 'assets/artwork/finished_artwork.jpg')
-        self.image_refresh()
+        shutil.copy(audible_artwork, finished_artwork)
+        Functions.image_refresh(self)
 
     def goodreads_save(self):
         self.final_title.setText(self.goodreads_title.text())
         self.final_author.setText(self.goodreads_author.text())
         self.final_series.setText(self.goodreads_series.text())
         self.final_book_number.setText(self.goodreads_book_number.text())
+        shutil.copy(goodreads_artwork, finished_artwork)
+        Functions.image_refresh(self)
 
     def ff_save(self):
         self.final_title.setText(self.ff_title.text())
         self.final_author.setText(self.ff_author.text())
         self.final_series.setText(self.ff_series.text())
         self.final_book_number.setText(self.ff_book_number.text())
+        shutil.copy(ff_artwork, finished_artwork)
 
     def google_save(self):
         self.final_title.setText(self.google_title.text())
         self.final_author.setText(self.google_author.text())
         self.final_series.setText(self.google_series.text())
         self.final_book_number.setText(self.google_book_number.text())
-        shutil.copy('assets/artwork/google_artwork.jpg', 'assets/artwork/finished_artwork.jpg')
-        self.image_refresh()
-
-    def image_refresh(self):
-        self.google_artwork.setPixmap((QPixmap("assets/artwork/google_artwork.jpg")).scaled(self.google_artwork.size(),
-                                                                                            Qt.KeepAspectRatio,
-                                                                                            Qt.SmoothTransformation))
-        self.ff_artwork.setPixmap((QPixmap("assets/artwork/ff_artwork.jpg")).scaled(self.ff_artwork.size(),
-                                                                                    Qt.KeepAspectRatio,
-                                                                                    Qt.SmoothTransformation))
-        self.audible_artwork.setPixmap(
-            (QPixmap("assets/artwork/audible_artwork.jpg")).scaled(self.audible_artwork.size(),
-                                                                   Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.goodreads_artwork.setPixmap(
-            (QPixmap("assets/artwork/goodreads_artwork.jpg")).scaled(self.goodreads_artwork.size(),
-                                                                     Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.finished_artwork.setPixmap(
-            (QPixmap("assets/artwork/finished_artwork.jpg")).scaled(self.finished_artwork.size(),
-                                                                    Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.original_artwork.setPixmap(
-            (QPixmap("assets/artwork/original_artwork.jpg")).scaled(self.original_artwork.size(),
-                                                                    Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        try:
+            shutil.copy(google_artwork, finished_artwork)
+        except:
+            print("image error")
+        Functions.image_refresh(self)
 
     def file_locations(self):
         return self.FileLocation.text()
@@ -536,7 +461,7 @@ class Ui_MainWindow(object):
         return self.SaveFormatText.text()
 
     def restore_settings(self):
-        db_file = "audiobookspython.db"
+        db_file = database
         con = sqlite3.connect(db_file)
         cur = con.cursor()
         c = cur.execute("SELECT * FROM settings")
@@ -547,7 +472,7 @@ class Ui_MainWindow(object):
         self.SaveFormatText.setText(settings[2][1])
 
     def save_settings(self):
-        db_file = "audiobookspython.db"
+        db_file = database
         con = sqlite3.connect(db_file)
         query = "UPDATE settings SET setting = '" + self.FileLocation.text() + "' WHERE id = 1;"
         con.execute(query)
@@ -569,18 +494,14 @@ class Ui_MainWindow(object):
         audiofile.tag.album_artist = self.ABdict['A_publisher']
         audiofile.tag.genre = self.ABdict['A_genre']
         audiofile.tag.comments.set(str(self.ABdict['A_rating']))
-
-        # post twice for the same artwork. one for file view and one shows up in itunes
-        imagedata = open('D:\AudibleApp\PICaudible.jpg', "rb").read()
+        # posting twice for the same artwork. one for file view and one shows up in itunes
+        imagedata = open(finished_artwork, "rb").read()
         audiofile.tag.images.set(1, imagedata, 'image/jpeg', u"icon 2")
         audiofile.tag.save()
-
         audiofile1 = eyed3.load(self.fileComboBox.currentText())
         audiofile1.tag.images.set(3, imagedata, 'image/jpeg', u'front 3')
         audiofile1.tag.save()
-
         locat = self.FinishedLocation.text()
-
         dst = locat + '\\' + os.path.basename(self.fileComboBox.currentText())
         shutil.move(self.fileComboBox.currentText(), dst)
         extension = os.path.splitext(os.path.basename(self.fileComboBox.currentText()))[1]
@@ -631,7 +552,7 @@ class Ui_MainWindow(object):
                 image_file = open("assets/artwork/{0}.jpg".format("original_artwork"), "wb")
                 image_file.write(image.image_data)
                 image_file.close()
-            self.image_refresh()
+            Functions.image_refresh(self)
 
     def combobox_google_select(self):
         if self.google_combobox.currentIndex() >= 0:
@@ -641,12 +562,20 @@ class Ui_MainWindow(object):
             self.google_title.setText(record[1])
             self.google_author.setText(record[2])
             self.google_series.setText(record[4])
+
             try:
-                req.urlretrieve(record[6], "assets/artwork/google_artwork.jpg")
+                req.urlretrieve(record[6], google_artwork)
             except:
                 print("image issue")
-            self.image_refresh()
-            self.google_fuzzy.setText(str(self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])))
+            Functions.image_refresh(self)
+            fuzzy = self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])
+            self.google_fuzzy.setText(str(fuzzy))
+            if fuzzy >= 90:
+                self.google_fuzzy.setStyleSheet("background-color: green")
+            elif fuzzy >= 60:
+                self.google_fuzzy.setStyleSheet("background-color: yellow")
+            else:
+                self.google_fuzzy.setStyleSheet("background-color: red")
 
     def combobox_audible_select(self):
         if self.audible_combobox.currentIndex() >= 0:
@@ -657,18 +586,52 @@ class Ui_MainWindow(object):
             self.audible_title.setText(record[1])
             self.audible_author.setText(record[2])
             self.audible_series.setText(record[4])
+            self.audible_book_number.setText(record[5])
             print(record[8])
             try:
                 ssl._create_default_https_context = ssl._create_unverified_context
-                req.urlretrieve(record[8], "assets/artwork/audible_artwork.jpg")
+                req.urlretrieve(record[8], audible_artwork)
             except:
                 print("image issue")
-            self.image_refresh()
-            self.audible_fuzzy.setText(str(self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])))
+            Functions.image_refresh(self)
+            fuzzy = self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])
+            self.audible_fuzzy.setText(str(fuzzy))
+            if fuzzy >= 90:
+                self.audible_fuzzy.setStyleSheet("background-color: green")
+            elif fuzzy >= 60:
+                self.audible_fuzzy.setStyleSheet("background-color: yellow")
+            else:
+                self.audible_fuzzy.setStyleSheet("background-color: red")
 
+    def combobox_goodreads_select(self):
+        if self.goodreads_combobox.currentIndex() >= 0:
+            id = self.goodreads_combobox.currentText().split(" - ")[-1]
+            record = Functions.database_get(id, "goodreads")
+            print(record)
+            self.goodreads_title.setText(record[1])
+            self.goodreads_author.setText(record[2])
+            self.goodreads_series.setText(record[4])
+
+            self.goodreads_book_number.setText(record[5])
+            print(record[8])
+            try:
+                ssl._create_default_https_context = ssl._create_unverified_context
+                req.urlretrieve(record[8], goodreads_artwork)
+            except:
+                print("image issue")
+            Functions.image_refresh(self)
+            fuzzy = self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])
+            self.goodreads_fuzzy.setText(str(fuzzy))
+            if fuzzy >= 90:
+                self.goodreads_fuzzy.setStyleSheet("background-color: green")
+            elif fuzzy >= 60:
+                self.goodreads_fuzzy.setStyleSheet("background-color: yellow")
+            else:
+                self.goodreads_fuzzy.setStyleSheet("background-color: red")
+
+    # combobox update ********************************
     def file_combobox_update(self):
         self.file_combobox.clear()
-        list_of_files = []
         for (dir_path, dir_names, filenames) in os.walk(self.file_locations()):
             for file in filenames:
                 if "mp3" in file.lower():
@@ -689,20 +652,66 @@ class Ui_MainWindow(object):
             self.audible_combobox.addItem(
                 book['title'] + " " + book['series'] + " " + book['author'] + " - " + book['id'])
 
+    def goodreads_combobox_update(self, book_list):
+        self.goodreads_combobox.blockSignals(True)
+        self.goodreads_combobox.clear()
+        self.goodreads_combobox.blockSignals(False)
+        for book in book_list:
+            self.goodreads_combobox.addItem(
+                book['title'] + " " + book['series'] + " " + book['author'] + " - " + book['id'])
+
+    def ff_combobox_update(self, book_list):
+        self.ff_combobox.blockSignals(True)
+        self.ff_combobox.clear()
+        self.ff_combobox.blockSignals(False)
+        for book in book_list:
+            self.ff_combobox.addItem(
+                book['title'] + " " + book['series'] + " " + book['author'] + " - " + book['id'])
+
     def run_searches(self):
-        searchfields = (self.file_title.text() + " " + self.file_author.text() + " " + self.file_series.text()).lower()
-        searchstring = searchfields.replace("book", "").replace("0", "").replace(" ", "+")
-        if self.google_search_toggle.isChecked():
-            book_list = Functions.google_search(searchstring)
-            self.google_combobox_update(book_list)
-        if self.audible_search_toggle.isChecked():
-            book_list = Functions.audible_search(searchstring)
-            print(searchstring)
-            self.audible_combobox_update(book_list)
+        if self.file_combobox.currentIndex() >= 0:
+            search_fields = self.word_duplicate_remove(
+                self.file_title.text() + " " + self.file_author.text() + " " + self.file_series.text()).lower()
+            search_string = search_fields.replace("book", "").replace("0", "").replace(" ", "+")
+            if self.google_search_toggle.isChecked():
+                book_list = Functions.google_search(search_string)
+                self.google_combobox_update(book_list)
+            if self.audible_search_toggle.isChecked():
+                book_list = Functions.audible_scrapper(search_string)
+                book_list_sorted = self.fuzzy_sort(book_list)
+                self.audible_combobox_update(book_list_sorted)
+            if self.goodreads_search_toggle.isChecked():
+                book_list = Functions.goodreads_srcapper(search_string)
+                self.goodreads_combobox_update(book_list)
+            if self.ff_search_toggle.isChecked():
+                book_list = Functions.ff_srcapper(search_string)
+                self.ff_combobox_update(book_list)
+
+    def word_duplicate_remove(self, string):
+        list_string = string.split(" ")
+        new_string = ""
+        for word in list_string:
+            if word not in new_string:
+                new_string += " " + word
+        return new_string
 
     def fuzzyRateFeild(self, new_info):
         file_info: str = self.file_title.text() + ' ' + self.file_author.text() + ' ' + self.file_series.text()
         return fuzz.token_set_ratio(new_info, file_info.replace('None', ''))
+
+    def fuzzy_sort(self, book_list):
+        rating_list = []
+        search_string = self.word_duplicate_remove(
+            self.file_title.text() + " " + self.file_author.text() + " " + self.file_series.text()).lower().replace(
+            "None", "")
+        for book in book_list:
+            rating_list.append(
+                [fuzz.token_set_ratio(search_string, book['title'] + " " + book['series'] + " " + book['author']),
+                 book])
+        sorted_list = sorted(rating_list, key=operator.itemgetter(0), reverse=True)
+        result = [item[1] for item in sorted_list]
+        return result
+
 
 if __name__ == "__main__":
     import sys
