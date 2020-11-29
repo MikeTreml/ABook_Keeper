@@ -283,6 +283,11 @@ class Ui_MainWindow(object):
         self.google_series.setText("")
         self.google_fuzzy.setText("")
 
+        self.final_book_number.setText("")
+        self.final_title.setText("")
+        self.final_author.setText("")
+        self.final_series.setText("")
+
         self.goodreads_book_number.setText("")
         self.goodreads_title.setText("")
         self.goodreads_author.setText("")
@@ -349,18 +354,22 @@ class Ui_MainWindow(object):
     def final_artwork_audible(self):
         if path.exists(audible_artwork):
             shutil.copy(audible_artwork, finished_artwork)
+            Functions.image_refresh(self)
 
     def final_artwork_goodreads(self):
         if path.exists(goodreads_artwork):
             shutil.copy(goodreads_artwork, finished_artwork)
+            Functions.image_refresh(self)
 
     def final_artwork_google(self):
         if path.exists(google_artwork):
             shutil.copy(google_artwork, finished_artwork)
+            Functions.image_refresh(self)
 
     def final_artwork_ff(self):
         if path.exists(ff_artwork):
             shutil.copy(ff_artwork, finished_artwork)
+            Functions.image_refresh(self)
 
     def final_series_ff(self):
         self.final_series.setText(self.ff_series.text())
@@ -415,7 +424,7 @@ class Ui_MainWindow(object):
         self.google_combobox.currentIndexChanged.connect(self.combobox_google_select)
         self.audible_combobox.currentIndexChanged.connect(self.combobox_audible_select)
         self.goodreads_combobox.currentIndexChanged.connect(self.combobox_goodreads_select)
-        #  self.ff_combobox.currentIndexChanged.connect(self.ff_comboboxSelect)
+        self.ff_combobox.currentIndexChanged.connect(self.combobox_ff_select)
 
     def audible_save(self):
         self.final_title.setText(self.audible_title.text())
@@ -430,7 +439,8 @@ class Ui_MainWindow(object):
         self.final_author.setText(self.goodreads_author.text())
         self.final_series.setText(self.goodreads_series.text())
         self.final_book_number.setText(self.goodreads_book_number.text())
-        shutil.copy(goodreads_artwork, finished_artwork)
+        if os.path.exists(goodreads_artwork):
+            shutil.copy(goodreads_artwork, finished_artwork)
         Functions.image_refresh(self)
 
     def ff_save(self):
@@ -485,33 +495,36 @@ class Ui_MainWindow(object):
 
     def save(self):
         file_loacation = self.file_locations() + self.file_combobox.currentText()
+        file = self.file_combobox.currentText()
         audiofile = eyed3.load(file_loacation)
-        audiofile.tag.artist = self.file_author.text()
+        audiofile.tag.artist = self.final_author.text()
         audiofile.tag.album = self.final_series.text()
-        audiofile.tag.title = self.file_title.text()
-        audiofile.tag.composer = self.ABdict['A_narrator']
-        audiofile.tag.release_date = self.ABdict['A_releaseDate']
-        audiofile.tag.album_artist = self.ABdict['A_publisher']
-        audiofile.tag.genre = self.ABdict['A_genre']
-        audiofile.tag.comments.set(str(self.ABdict['A_rating']))
+        audiofile.tag.title = self.final_title.text()
+
         # posting twice for the same artwork. one for file view and one shows up in itunes
         imagedata = open(finished_artwork, "rb").read()
         audiofile.tag.images.set(1, imagedata, 'image/jpeg', u"icon 2")
         audiofile.tag.save()
-        audiofile1 = eyed3.load(self.fileComboBox.currentText())
+        audiofile1 = eyed3.load(file_loacation)
         audiofile1.tag.images.set(3, imagedata, 'image/jpeg', u'front 3')
         audiofile1.tag.save()
-        locat = self.FinishedLocation.text()
-        dst = locat + '\\' + os.path.basename(self.fileComboBox.currentText())
-        shutil.move(self.fileComboBox.currentText(), dst)
-        extension = os.path.splitext(os.path.basename(self.fileComboBox.currentText()))[1]
-        save_string_settings = self.save_format().text().replace("<series>", "{1}").replace("<book #>", "{2}").replace(
+        save_string_settings = str(self.save_format()).replace("<series>", "{1}").replace("<book #>", "{2}").replace(
             "<title>", "{3}").replace("<author>", "{4}").replace("<folder>", "/")
-        save_pattern = "{0/" + save_string_settings + "{5}"
+        save_pattern = "{0}" + save_string_settings + "{5}"
+        locat = self.FinishedLocation.text()
+        extension = os.path.splitext(os.path.basename(file))[1]
+        folders = save_pattern.split("/")
+        folders_pattern = save_pattern.replace(folders[-1], "")
+        new_folders = folders_pattern.format(locat, self.final_series.text(), self.final_book_number.text(),
+                                             self.final_title.text(), self.audible_author.text(), extension)
+        if not os.path.exists(new_folders):
+            os.makedirs(new_folders)
+
+        dst = locat + os.path.basename(file)
+        shutil.move(file_loacation, dst)
+
         new_filename = save_pattern.format(locat, self.final_series.text(), self.final_book_number.text(),
-                                           self.final_title.text(), self.audible_author.text(), extension).replace(':',
-                                                                                                                   '').replace(
-            '\\', '')
+                                           self.final_title.text(), self.audible_author.text(), extension)
         print('dst', dst)
         print(new_filename)
         file = pathlib.Path(new_filename)
@@ -576,6 +589,29 @@ class Ui_MainWindow(object):
                 self.google_fuzzy.setStyleSheet("background-color: yellow")
             else:
                 self.google_fuzzy.setStyleSheet("background-color: red")
+
+    def combobox_ff_select(self):
+        if self.ff_combobox.currentIndex() >= 0:
+            print(self.google_combobox.currentIndex())
+            record = Functions.database_get(self.ff_combobox.currentText(), "fantasticfiction")
+            print(record)
+            self.ff_title.setText(record[1])
+            self.ff_author.setText(record[2])
+            self.ff_series.setText(record[4])
+            self.ff_book_number.setText(record[5])
+            try:
+                req.urlretrieve(record[8], ff_artwork)
+            except:
+                print("image issue")
+            Functions.image_refresh(self)
+            fuzzy = self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])
+            self.ff_fuzzy.setText(str(fuzzy))
+            if fuzzy >= 90:
+                self.ff_fuzzy.setStyleSheet("background-color: green")
+            elif fuzzy >= 60:
+                self.ff_fuzzy.setStyleSheet("background-color: yellow")
+            else:
+                self.ff_fuzzy.setStyleSheet("background-color: red")
 
     def combobox_audible_select(self):
         if self.audible_combobox.currentIndex() >= 0:
@@ -665,13 +701,12 @@ class Ui_MainWindow(object):
         self.ff_combobox.clear()
         self.ff_combobox.blockSignals(False)
         for book in book_list:
-            self.ff_combobox.addItem(
-                book['title'] + " " + book['series'] + " " + book['author'] + " - " + book['id'])
+            self.ff_combobox.addItem(book['id'])
 
     def run_searches(self):
         if self.file_combobox.currentIndex() >= 0:
-            search_fields = self.word_duplicate_remove(
-                self.file_title.text() + " " + self.file_author.text() + " " + self.file_series.text()).lower()
+            search_fields = self.word_duplicate_remove(self.file_title.text() + " " + self.file_author.text() + " " +
+                                                       self.file_series.text()).lower()
             search_string = search_fields.replace("book", "").replace("0", "").replace(" ", "+")
             if self.google_search_toggle.isChecked():
                 book_list = Functions.google_search(search_string)
@@ -684,8 +719,11 @@ class Ui_MainWindow(object):
                 book_list = Functions.goodreads_srcapper(search_string)
                 self.goodreads_combobox_update(book_list)
             if self.ff_search_toggle.isChecked():
-                book_list = Functions.ff_srcapper(search_string)
-                self.ff_combobox_update(book_list)
+                try:
+                    book_list = Functions.ff_search(search_string)
+                    self.ff_combobox_update(book_list)
+                except:
+                    print("result error")
 
     def word_duplicate_remove(self, string):
         list_string = string.split(" ")
