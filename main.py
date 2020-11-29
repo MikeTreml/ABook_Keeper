@@ -431,7 +431,8 @@ class Ui_MainWindow(object):
         self.final_author.setText(self.audible_author.text())
         self.final_series.setText(self.audible_series.text())
         self.final_book_number.setText(self.audible_book_number.text())
-        shutil.copy(audible_artwork, finished_artwork)
+        if os.path.exists(audible_artwork):
+            shutil.copy(audible_artwork, finished_artwork)
         Functions.image_refresh(self)
 
     def goodreads_save(self):
@@ -448,17 +449,17 @@ class Ui_MainWindow(object):
         self.final_author.setText(self.ff_author.text())
         self.final_series.setText(self.ff_series.text())
         self.final_book_number.setText(self.ff_book_number.text())
-        shutil.copy(ff_artwork, finished_artwork)
+        if os.path.exists(ff_artwork):
+            shutil.copy(ff_artwork, finished_artwork)
+        Functions.image_refresh(self)
 
     def google_save(self):
         self.final_title.setText(self.google_title.text())
         self.final_author.setText(self.google_author.text())
         self.final_series.setText(self.google_series.text())
         self.final_book_number.setText(self.google_book_number.text())
-        try:
+        if os.path.exists(google_artwork):
             shutil.copy(google_artwork, finished_artwork)
-        except:
-            print("image error")
         Functions.image_refresh(self)
 
     def file_locations(self):
@@ -502,12 +503,15 @@ class Ui_MainWindow(object):
         audiofile.tag.title = self.final_title.text()
 
         # posting twice for the same artwork. one for file view and one shows up in itunes
-        imagedata = open(finished_artwork, "rb").read()
-        audiofile.tag.images.set(1, imagedata, 'image/jpeg', u"icon 2")
-        audiofile.tag.save()
-        audiofile1 = eyed3.load(file_loacation)
-        audiofile1.tag.images.set(3, imagedata, 'image/jpeg', u'front 3')
-        audiofile1.tag.save()
+        try:
+            imagedata = open(finished_artwork, "rb").read()
+            audiofile.tag.images.set(1, imagedata, 'image/jpeg', u"icon 2")
+            audiofile.tag.save()
+            audiofile1 = eyed3.load(file_loacation)
+            audiofile1.tag.images.set(3, imagedata, 'image/jpeg', u'front 3')
+            audiofile1.tag.save()
+        except:
+            print("no new artwork")
         save_string_settings = str(self.save_format()).replace("<series>", "{1}").replace("<book #>", "{2}").replace(
             "<title>", "{3}").replace("<author>", "{4}").replace("<folder>", "/")
         save_pattern = "{0}" + save_string_settings + "{5}"
@@ -584,11 +588,11 @@ class Ui_MainWindow(object):
             fuzzy = self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])
             self.google_fuzzy.setText(str(fuzzy))
             if fuzzy >= 90:
-                self.google_fuzzy.setStyleSheet("background-color: green")
+                self.google_fuzzy.setStyleSheet("background-color: green; color: black")
             elif fuzzy >= 60:
-                self.google_fuzzy.setStyleSheet("background-color: yellow")
+                self.google_fuzzy.setStyleSheet("background-color: yellow; color: black")
             else:
-                self.google_fuzzy.setStyleSheet("background-color: red")
+                self.google_fuzzy.setStyleSheet("background-color: red; color: black")
 
     def combobox_ff_select(self):
         if self.ff_combobox.currentIndex() >= 0:
@@ -599,7 +603,9 @@ class Ui_MainWindow(object):
             self.ff_author.setText(record[2])
             self.ff_series.setText(record[4])
             self.ff_book_number.setText(record[5])
+            self.ff_URL.setText(record[11])
             try:
+                ssl._create_default_https_context = ssl._create_unverified_context
                 req.urlretrieve(record[8], ff_artwork)
             except:
                 print("image issue")
@@ -607,11 +613,11 @@ class Ui_MainWindow(object):
             fuzzy = self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])
             self.ff_fuzzy.setText(str(fuzzy))
             if fuzzy >= 90:
-                self.ff_fuzzy.setStyleSheet("background-color: green")
+                self.ff_fuzzy.setStyleSheet("background-color: green; color: black")
             elif fuzzy >= 60:
-                self.ff_fuzzy.setStyleSheet("background-color: yellow")
+                self.ff_fuzzy.setStyleSheet("background-color: yellow; color: black")
             else:
-                self.ff_fuzzy.setStyleSheet("background-color: red")
+                self.ff_fuzzy.setStyleSheet("background-color: red; color: black")
 
     def combobox_audible_select(self):
         if self.audible_combobox.currentIndex() >= 0:
@@ -623,6 +629,7 @@ class Ui_MainWindow(object):
             self.audible_author.setText(record[2])
             self.audible_series.setText(record[4])
             self.audible_book_number.setText(record[5])
+            self.audible_URL.setText(record[11])
             print(record[8])
             try:
                 ssl._create_default_https_context = ssl._create_unverified_context
@@ -633,11 +640,11 @@ class Ui_MainWindow(object):
             fuzzy = self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])
             self.audible_fuzzy.setText(str(fuzzy))
             if fuzzy >= 90:
-                self.audible_fuzzy.setStyleSheet("background-color: green")
+                self.audible_fuzzy.setStyleSheet("background-color: green; color: black")
             elif fuzzy >= 60:
-                self.audible_fuzzy.setStyleSheet("background-color: yellow")
+                self.audible_fuzzy.setStyleSheet("background-color: yellow; color: black")
             else:
-                self.audible_fuzzy.setStyleSheet("background-color: red")
+                self.audible_fuzzy.setStyleSheet("background-color: red; color: black")
 
     def combobox_goodreads_select(self):
         if self.goodreads_combobox.currentIndex() >= 0:
@@ -647,7 +654,7 @@ class Ui_MainWindow(object):
             self.goodreads_title.setText(record[1])
             self.goodreads_author.setText(record[2])
             self.goodreads_series.setText(record[4])
-
+            self.goodreads_URL.setText(record[11])
             self.goodreads_book_number.setText(record[5])
             print(record[8])
             try:
@@ -659,11 +666,11 @@ class Ui_MainWindow(object):
             fuzzy = self.fuzzyRateFeild(record[1] + " " + record[2] + " " + record[4])
             self.goodreads_fuzzy.setText(str(fuzzy))
             if fuzzy >= 90:
-                self.goodreads_fuzzy.setStyleSheet("background-color: green")
+                self.goodreads_fuzzy.setStyleSheet("background-color: green; color: black")
             elif fuzzy >= 60:
-                self.goodreads_fuzzy.setStyleSheet("background-color: yellow")
+                self.goodreads_fuzzy.setStyleSheet("background-color: yellow; color: black")
             else:
-                self.goodreads_fuzzy.setStyleSheet("background-color: red")
+                self.goodreads_fuzzy.setStyleSheet("background-color: red; color: black")
 
     # combobox update ********************************
     def file_combobox_update(self):
@@ -692,9 +699,10 @@ class Ui_MainWindow(object):
         self.goodreads_combobox.blockSignals(True)
         self.goodreads_combobox.clear()
         self.goodreads_combobox.blockSignals(False)
-        for book in book_list:
-            self.goodreads_combobox.addItem(
-                book['title'] + " " + book['series'] + " " + book['author'] + " - " + book['id'])
+        if book_list is not None:
+            for book in book_list:
+                self.goodreads_combobox.addItem(
+                    book['title'] + " " + book['series'] + " " + book['author'] + " - " + book['id'])
 
     def ff_combobox_update(self, book_list):
         self.ff_combobox.blockSignals(True)
