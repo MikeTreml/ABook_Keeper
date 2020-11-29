@@ -56,15 +56,26 @@ def try_check3_array(book, string1, string2, number, string3):
 
 def soup_check(soup):
     # some books don't have the requested info. this is to check is it had info to pull
+    print(type(soup))
+
+    if soup is None:
+        soup_string = ""
+    elif type(soup) != str:
+        soup_string = str(soup.get_text(strip=True))
+    else:
+        soup_string = soup
+
+    clean_soup = soup_string.replace("Series:", "").replace(" Series,", "").replace(
+        "Narrated by:", "").replace("By:", "").replace("Length: ", "").replace("Release date:", "").replace(
+        "Language:", "").replace(" out of 5 stars", " stars ")
     try:
         # cleaning up the string
-        result = re.sub(r"[\n][\W]+[^\w]", "", soup.get_text(strip=True)).replace("Series:", ""). \
-            replace(" Series,", "").replace("Narrated by:", "").replace("By:", "").replace("Length: ", "").replace(
-            "Release date:", "").replace("Language:", "").replace(" out of 5 stars", " stars ")
+        result = re.sub(r"[\n][\W]+[^\w]", "", clean_soup)
     except:
         # if there was no result
-        result = ""
-    return result
+        result = clean_soup
+    clean_result = string_cleaner_database(result)
+    return clean_result
 
 
 # web scrappers and api search *******************************
@@ -81,9 +92,9 @@ def audible_scrapper(input_string):
         website_split = website.split('/')
         id = website_split[-1]
         image_url = book.find('img', attrs={"id": "nojs_img_"})['src']
-        title = soup_check(book.find('h2', attrs={"class": "bc-heading bc-color-base bc-text-bold"}))
-        if ": " in title:
-            title, book_number = title.split(": ")
+        title = soup_check(book.find('h2', attrs={"class": "bc-heading bc-color-base bc-text-bold"})).replace(": ", "~")
+        if "~" in title:
+            title, book_number = title.split("~")
         author = soup_check(book.find('li', attrs={"class": "bc-list-item authorLabel"}))
         narrator = soup_check(book.find('li', attrs={"class": "bc-list-item narratorLabel"}))
         subtitle = soup_check(book.find('li', attrs={"class": "bc-list-item subtitle"}))
@@ -93,6 +104,11 @@ def audible_scrapper(input_string):
             series = split_series_book[0]
             if len(split_series_book) > 1:
                 book_number = split_series_book[1]
+        else:
+            split_subtitle_book = subtitle.split("Book ")
+            series = split_subtitle_book[0]
+            if len(split_subtitle_book) > 1:
+                book_number = split_subtitle_book[1]
         length = soup_check(book.find('li', attrs={"class": "bc-list-item runtimeLabel"}))
         date = soup_check(book.find('li', attrs={"class": "bc-list-item releaseDateLabel"}))
         language = soup_check(book.find('li', attrs={"class": "bc-list-item languageLabel"}))
@@ -106,63 +122,83 @@ def audible_scrapper(input_string):
     return book_list
 
 
-def ff_scrapper(input_string):
-    book_list = []
-    ff_database_post(book_list)
-    return book_list
-
-
 def goodreads_srcapper(input_string):
     series = ""
     book_number = ""
+    title = ""
     book_list = []
     url = "https://www.goodreads.com/search?utf8=%E2%9C%93&query=" + input_string
     page_source = requests.get(url)
     soup = BeautifulSoup(page_source.text, 'lxml')
     books = soup.find_all('tr')
     for book in books:
-        author = soup.find('a', attrs={"class": "authorName"}).get_text(strip=True)
-        info = soup.find('a', attrs={"class": "bookTitle"}).get_text(strip=True)
-        id = soup.find('div', attrs={"class": "u-anchorTarget"})["id"]
-        rating = soup.find('span', attrs={"class": "minirating"}).get_text(strip=True)
-        image_url = soup.find('img', attrs={"class": "bookCover"})["src"]
-        print(info)
-        if ": Book " in info:
-            series, book_number = info.split(": Book ")
+        author = soup_check(book.find('a', attrs={"class": "authorName"}))
+        info = soup_check(book.find('a', attrs={"class": "bookTitle"})).replace(": Book ", "~").replace(" Book #",
+                                                                                                        "~").replace(
+            " (", "~").replace(")", "").replace(", #", "~")
+        id = soup_check(book.find('div', attrs={"class": "u-anchorTarget"})["id"])
+        rating = soup_check(book.find('span', attrs={"class": "minirating"}))
+        image_url = book.find('img', attrs={"class": "bookCover"})["src"]
+        print("info " + info)
+        info_split = info.split("~")
+        if len(info_split) == 2:
+            series = info_split[0]
+            book_number = info_split[1]
             title = series
-        elif " (" in info:
-            title, placeholder = info.split(" (").replace(")", "")
-            series, book_number = placeholder.split(", #")
+        elif len(info_split) == 3:
+            title = info_split[0]
+            series = info_split[1]
+            book_number = info_split[2]
         web_url = "https://www.goodreads.com/book/show/" + id
-
         book_list.append({"id": id, "title": title, "author": author, "series": series, "book_number": book_number,
                           "image_url": image_url, "web_url": web_url, "rating": rating})
         goodreads_database_post(book_list)
         return book_list
 
-
 def ff_search(input_string):
     query = input_string.replace(" ", "+")
     url = f"https://www.googleapis.com/customsearch/v1?key={api_keys.API_KEY}&cx={api_keys.SEARCH_ENGINE_ID}&q={query}"
     data = requests.get(url).json()
+    print(data)
     book_list = []
     for book in data["items"]:
-        title = try_check1(book, "title")
-        snippet = try_check1(book, "snippet")
         link = try_check1(book, "link")
-        formatted_url = try_check2(book, "formattedUrl")
-        book_title = try_check3_array("pagemap", "book", 0, "name")
-        person = try_check3_array("pagemap", "person", 0, "name")
-        cse_image = try_check3_array("pagemap", "cse_image", 0, "src")
-        cse_thumbnail = try_check3_array("pagemap", "cse_thumbnail", 0, "src")
+        if ".htm" in link:
+            info = try_check1(book, "title").replace(") by ", "~").replace(" by ", "~").replace(' (', "~").replace(
+                ', book ', "~")
+            print(info)
+            info_split = info.split("~")
+            title = try_check3_array(book, "pagemap", "book", 0, "name")
+            author = try_check3_array(book, "pagemap", "person", 0, "name")
+            try:
+                image = try_check3_array(book, "pagemap", "cse_image", 0, "src")
+            except:
+                print("no image")
+            # description = try_check1(book, "snippet")
+            series = 'Novel'
+            book_number = "0"
+            if len(info_split) == 2:
+                title = info_split[0]
+                author = info_split[1]
+            if len(info_split) == 1:
+                title, book_number = info.split(": Book ")
+                series = title
+            elif len(info_split) == 4:
+                title = info_split[0]
+                series = info_split[1]
+                book_number = info_split[2]
+                author = info_split[3]
+            else:
+                print("error")
+                print(info_split)
 
-    # book_list.append({"id": link, "title": title, "subtitle": subtitle, "authors": authors, "release_date": date,
-    #                "publisher": publisher, "description": description, "image_url": image})
-    google_database_post(book_list)
+            book_list.append({"id": link, "title": title, "series": series, "author": author,
+                              "book_number": book_number, "web_url": link, "image_url": image})
+    ff_database_post(book_list)
     return book_list
 
 
-def ff_search(input_string):
+def google_search(input_string):
     query = input_string.replace(" ", "+")
     string_builder = f"https://www.googleapis.com/books/v1/volumes?q={query}&?key={api_keys.API_KEY}"
     book_list = []
@@ -241,7 +277,7 @@ def database_get(id, table):
 
 
 def string_cleaner_database(string):
-    return string.replace("'", "`")
+    return string.replace("'", "`").replace(":", "∶").replace(",", "")
 
 
 def delete_artwork():
