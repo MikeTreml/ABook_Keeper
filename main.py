@@ -351,6 +351,14 @@ class Ui_MainWindow(object):
         self.ff_artwork_button.clicked.connect(self.final_artwork_ff)
         self.goodreads_artwork_button.clicked.connect(self.final_artwork_goodreads)
 
+    def combobox_configure(self):
+        self.file_combobox.currentIndexChanged.connect(self.file_combobox_select)
+        self.google_combobox.currentIndexChanged.connect(self.combobox_google_select)
+        self.audible_combobox.currentIndexChanged.connect(self.combobox_audible_select)
+        self.goodreads_combobox.currentIndexChanged.connect(self.combobox_goodreads_select)
+        self.ff_combobox.currentIndexChanged.connect(self.combobox_ff_select)
+
+    # button fields to transfer info to the final result*************
     def final_artwork_audible(self):
         if path.exists(audible_artwork):
             shutil.copy(audible_artwork, finished_artwork)
@@ -418,13 +426,6 @@ class Ui_MainWindow(object):
 
     def final_number_audible(self):
         self.final_book_number.setText(self.audible_book_number.text())
-
-    def combobox_configure(self):
-        self.file_combobox.currentIndexChanged.connect(self.file_combobox_select)
-        self.google_combobox.currentIndexChanged.connect(self.combobox_google_select)
-        self.audible_combobox.currentIndexChanged.connect(self.combobox_audible_select)
-        self.goodreads_combobox.currentIndexChanged.connect(self.combobox_goodreads_select)
-        self.ff_combobox.currentIndexChanged.connect(self.combobox_ff_select)
 
     def audible_save(self):
         self.final_title.setText(self.audible_title.text())
