@@ -80,7 +80,7 @@ def soup_check(soup):
 
 # web scrappers and api search *******************************
 def audible_scrapper(input_string):
-    series = ""
+    series = "Novel"
     book_number = ""
     url = "https://www.audible.com/search?ref=a_search_l1_feature_six_browse-bin_0&feature_six_browse-bin=18685580011&keywords=" + input_string
     page_source = requests.get(url)
@@ -114,7 +114,8 @@ def audible_scrapper(input_string):
         language = soup_check(book.find('li', attrs={"class": "bc-list-item languageLabel"}))
         rating = soup_check(book.find('li', attrs={"class": "bc-list-item ratingsLabel"}))
         web_url = "https://www.audible.com/pd/" + id
-
+        if series == "":
+            series = "Novel"
         book_list.append({"id": id, "title": title, "author": author, "narrator": narrator, "series": series,
                           "book_number": book_number, "image_url": image_url, "length": length, "release_date": date,
                           "web_url": web_url, "rating": rating, "subtitle": subtitle, "language": language})
@@ -123,7 +124,7 @@ def audible_scrapper(input_string):
 
 
 def goodreads_srcapper(input_string):
-    series = ""
+    series = "Novel"
     book_number = ""
     title = ""
     book_list = []
@@ -141,7 +142,14 @@ def goodreads_srcapper(input_string):
         image_url = book.find('img', attrs={"class": "bookCover"})["src"]
         print("info " + info)
         info_split = info.split("~")
-        if len(info_split) == 2:
+        if len(info_split) == 1:
+            try:
+                title, series = info_split[0].split("∶")
+                book_number = "0"
+            except:
+                title = info_split[0]
+
+        elif len(info_split) == 2:
             series = info_split[0]
             book_number = info_split[1]
             title = series
@@ -150,10 +158,13 @@ def goodreads_srcapper(input_string):
             series = info_split[1]
             book_number = info_split[2]
         web_url = "https://www.goodreads.com/book/show/" + id
+        if series == "":
+            series = "Novel"
         book_list.append({"id": id, "title": title, "author": author, "series": series, "book_number": book_number,
                           "image_url": image_url, "web_url": web_url, "rating": rating})
         goodreads_database_post(book_list)
         return book_list
+
 
 def ff_search(input_string):
     query = input_string.replace(" ", "+")
@@ -162,7 +173,7 @@ def ff_search(input_string):
     print(data)
     book_list = []
     for book in data["items"]:
-        link = try_check1(book, "link")
+        link = book["link"]
         if ".htm" in link:
             info = try_check1(book, "title").replace(") by ", "~").replace(" by ", "~").replace(' (', "~").replace(
                 ', book ', "~")
@@ -170,10 +181,7 @@ def ff_search(input_string):
             info_split = info.split("~")
             title = try_check3_array(book, "pagemap", "book", 0, "name")
             author = try_check3_array(book, "pagemap", "person", 0, "name")
-            try:
-                image = try_check3_array(book, "pagemap", "cse_image", 0, "src")
-            except:
-                print("no image")
+            image = ff_image_search(link)
             # description = try_check1(book, "snippet")
             series = 'Novel'
             book_number = "0"
@@ -191,7 +199,8 @@ def ff_search(input_string):
             else:
                 print("error")
                 print(info_split)
-
+            if series == "":
+                series = "Novel"
             book_list.append({"id": link, "title": title, "series": series, "author": author,
                               "book_number": book_number, "web_url": link, "image_url": image})
     ff_database_post(book_list)
@@ -202,6 +211,7 @@ def google_search(input_string):
     query = input_string.replace(" ", "+")
     string_builder = f"https://www.googleapis.com/books/v1/volumes?q={query}&?key={api_keys.API_KEY}"
     book_list = []
+    series = "Novel"
     data = requests.get(string_builder).json()
     for book in data["items"]:
         print(book)
@@ -215,10 +225,15 @@ def google_search(input_string):
         date = try_check2(book, 'volumeInfo', 'publishedDate')
         publisher = try_check2(book, 'volumeInfo', 'publisher')
         description = try_check2(book, 'volumeInfo', 'description')
-        image = try_check3(book, 'volumeInfo', 'imageLinks', 'thumbnail')
+        try:
+            image = book['volumeInfo']['imageLinks']['thumbnail']
+        except:
+            print("image issue")
         print(title)
         print(type(title))
         book_id = title + " " + subtitle + " " + authors
+        if series == "":
+            series = "Novel"
         book_list.append({"id": book_id, "title": title, "subtitle": subtitle, "authors": authors, "release_date": date,
                           "publisher": publisher, "description": description, "image_url": image})
         print(book_list)
@@ -281,12 +296,23 @@ def string_cleaner_database(string):
 
 
 def delete_artwork():
-    deleteExist(goodreads_art_file)
-    deleteExist(finished_art_file)
-    deleteExist(google_art_file)
-    deleteExist(audible_art_file)
-    deleteExist(ff_art_file)
-    deleteExist(original_art_file)
+    delete_exist(goodreads_art_file)
+    delete_exist(finished_art_file)
+    delete_exist(google_art_file)
+    delete_exist(audible_art_file)
+    delete_exist(ff_art_file)
+    delete_exist(original_art_file)
+
+
+def ff_image_search(link):
+    page_source = requests.get(link)
+    soup = BeautifulSoup(page_source.text, 'lxml')
+    try:
+        image = soup.find('img', attrs={'class': 'bookimage'})['data-us']
+        image_url = "https://m.media-amazon.com/images/I/" + image
+    except:
+        image_url = ""
+    return image_url
 
 
 def image_refresh(self):
@@ -304,7 +330,7 @@ def image_refresh(self):
                                                                         Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
 
-def deleteExist(path):
+def delete_exist(path):
     file = pathlib.Path(path)
     if file.exists():
         os.remove(path)
