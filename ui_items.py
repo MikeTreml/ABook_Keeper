@@ -4,25 +4,9 @@ from PyQt5.QtGui import QFont
 textbox_grey = "background-color: rgb(80, 80, 80);"
 
 def set_ui_readonly(object):
-    # object.ff_series.setReadOnly(True)
-    # object.ff_title.setReadOnly(True)
-    # object.ff_book_number.setReadOnly(True)
-    # object.ff_author.setReadOnly(True)
     object.ff_fuzzy.setReadOnly(True)
-    # object.audible_author.setReadOnly(True)
-    # object.audible_series.setReadOnly(True)
-    # object.audible_title.setReadOnly(True)
-    # object.audible_book_number.setReadOnly(True)
     object.audible_fuzzy.setReadOnly(True)
     object.goodreads_fuzzy.setReadOnly(True)
-    # object.goodreads_series.setReadOnly(True)
-    # object.goodreads_title.setReadOnly(True)
-    # object.goodreads_book_number.setReadOnly(True)
-    # object.goodreads_author.setReadOnly(True)
-    # object.google_series.setReadOnly(True)
-    # object.google_title.setReadOnly(True)
-    # object.google_book_number.setReadOnly(True)
-    # object.google_author.setReadOnly(True)
     object.google_fuzzy.setReadOnly(True)
 
 
@@ -179,6 +163,7 @@ def set_ui_color(object):
     object.search_button.setStyleSheet("background-color: rgb(120, 120, 120);")
 
 
+
 def set_ui_button(object):
     object.ff_book_number.setStyleSheet(textbox_grey)
     object.ff_title.setStyleSheet(textbox_grey + " Text-align:left; font-size: 9px")
@@ -193,9 +178,9 @@ def set_ui_button(object):
     # object.google_URL.setStyleSheet(textbox_grey +" Text-align:left; font-size: 9px")
 
     object.goodreads_book_number.setStyleSheet(textbox_grey)
-    object.goodreads_title.setStyleSheet(textbox_grey + " Text-align:left; font-size: 9px")
-    object.goodreads_author.setStyleSheet(textbox_grey + " Text-align:left; font-size: 9px")
-    object.goodreads_series.setStyleSheet(textbox_grey + " Text-align:left; font-size: 9px")
+    object.goodreads_title.setStyleSheet(textbox_grey + "Text-align:left; font-size: 9px")
+    object.goodreads_author.setStyleSheet(textbox_grey + "Text-align:left; font-size: 9px")
+    object.goodreads_series.setStyleSheet(textbox_grey + "Text-align:left; font-size: 9px")
     object.goodreads_URL.setStyleSheet("background-color: rgb(100, 100, 100); Text-align:left; font-size: 9px")
 
     object.audible_book_number.setStyleSheet(textbox_grey)
