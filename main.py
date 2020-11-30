@@ -7,6 +7,7 @@ import sqlite3
 import ssl
 import urllib.request as req
 from os import path
+from pathlib import Path
 
 import eyed3
 from PyQt5 import QtWidgets
@@ -496,9 +497,9 @@ class Ui_MainWindow(object):
         # **Create messagebox
 
     def save(self):
-        file_loacation = self.file_locations() + self.file_combobox.currentText()
-        file = self.file_combobox.currentText()
-        audiofile = eyed3.load(file_loacation)
+        # file_loacation = self.file_locations() + self.file_combobox.currentText()
+        file = self.file_combobox.currentText().replace("\u202a", "")
+        audiofile = eyed3.load(file)
         audiofile.tag.artist = self.final_author.text()
         audiofile.tag.album = self.final_series.text()
         audiofile.tag.title = self.final_title.text()
@@ -508,7 +509,7 @@ class Ui_MainWindow(object):
             imagedata = open(finished_artwork, "rb").read()
             audiofile.tag.images.set(1, imagedata, 'image/jpeg', u"icon 2")
             audiofile.tag.save()
-            audiofile1 = eyed3.load(file_loacation)
+            audiofile1 = eyed3.load(file)
             audiofile1.tag.images.set(3, imagedata, 'image/jpeg', u'front 3')
             audiofile1.tag.save()
         except:
@@ -526,7 +527,7 @@ class Ui_MainWindow(object):
             os.makedirs(new_folders)
 
         dst = locat + os.path.basename(file)
-        shutil.move(file_loacation, dst)
+        shutil.move(file, dst)
 
         new_filename = save_pattern.format(locat, self.final_series.text(), self.final_book_number.text(),
                                            self.final_title.text(), self.audible_author.text(), extension)
@@ -545,7 +546,7 @@ class Ui_MainWindow(object):
     def file_combobox_select(self):
         self.clear_fields()
         if self.file_combobox.currentText() != "":
-            audio_file = eyed3.load(os.path.join(self.file_locations(), self.file_combobox.currentText()))
+            audio_file = eyed3.load(os.path.join(self.file_locations(), Path(self.file_combobox.currentText())))
             title = str(audio_file.tag.title)
             author = str(audio_file.tag.artist)
             series = str(audio_file.tag.album)
@@ -676,10 +677,13 @@ class Ui_MainWindow(object):
     # combobox update ********************************
     def file_combobox_update(self):
         self.file_combobox.clear()
-        for (dir_path, dir_names, filenames) in os.walk(self.file_locations()):
-            for file in filenames:
-                if "mp3" in file.lower():
-                    self.file_combobox.addItem(file)
+        files = self.file_locations().replace("\u202a", "")
+        self.path = files
+        for (dir_path, dir_names, file_names) in os.walk(self.path):
+            listOfFiles = [os.path.join(dir_path, file) for file in file_names]
+            for file in listOfFiles:
+                print(file)
+                self.file_combobox.addItem(file)
 
     def google_combobox_update(self, book_list):
         self.google_combobox.blockSignals(True)
@@ -728,11 +732,8 @@ class Ui_MainWindow(object):
                 book_list = Functions.goodreads_srcapper(search_string)
                 self.goodreads_combobox_update(book_list)
             if self.ff_search_toggle.isChecked():
-                try:
-                    book_list = Functions.ff_search(search_string)
-                    self.ff_combobox_update(book_list)
-                except:
-                    print("result error")
+                book_list = Functions.ff_search(search_string)
+                self.ff_combobox_update(book_list)
 
     def word_duplicate_remove(self, string):
         list_string = string.split(" ")

@@ -175,14 +175,16 @@ def ff_search(input_string):
     for book in data["items"]:
         link = book["link"]
         if ".htm" in link:
-            info = try_check1(book, "title").replace(") by ", "~").replace(" by ", "~").replace(' (', "~").replace(
+            soup = ff_direct_search(link)
+            try:
+                image = soup.find('img', attrs={'class': 'bookimage'})['data-us']
+                image_url = "https://m.media-amazon.com/images/I/" + image
+            except:
+                print("no image")
+            info = soup.find('title').get_text(strip=True).replace(") by ", "~").replace(" by ", "~").replace(' (', "~").replace(
                 ', book ', "~")
             print(info)
             info_split = info.split("~")
-            title = try_check3_array(book, "pagemap", "book", 0, "name")
-            author = try_check3_array(book, "pagemap", "person", 0, "name")
-            image = ff_image_search(link)
-            # description = try_check1(book, "snippet")
             series = 'Novel'
             book_number = "0"
             if len(info_split) == 2:
@@ -202,7 +204,7 @@ def ff_search(input_string):
             if series == "":
                 series = "Novel"
             book_list.append({"id": link, "title": title, "series": series, "author": author,
-                              "book_number": book_number, "web_url": link, "image_url": image})
+                              "book_number": book_number, "web_url": link, "image_url": image_url})
     ff_database_post(book_list)
     return book_list
 
@@ -304,15 +306,11 @@ def delete_artwork():
     delete_exist(original_art_file)
 
 
-def ff_image_search(link):
+def ff_direct_search(link):
     page_source = requests.get(link)
     soup = BeautifulSoup(page_source.text, 'lxml')
-    try:
-        image = soup.find('img', attrs={'class': 'bookimage'})['data-us']
-        image_url = "https://m.media-amazon.com/images/I/" + image
-    except:
-        image_url = ""
-    return image_url
+
+    return soup
 
 
 def image_refresh(self):
