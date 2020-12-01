@@ -1,7 +1,9 @@
 import os
+import os.path
 import pathlib
 import re
 import sqlite3
+from os import path
 
 import requests
 from PyQt5.QtCore import Qt
@@ -10,13 +12,14 @@ from bs4 import BeautifulSoup
 
 import api_keys
 
+database = "audiobookspython.db"
 goodreads_art_file = 'assets/artwork/goodreads_artwork.jpg'
 finished_art_file = 'assets/artwork/finished_artwork.jpg'
 google_art_file = 'assets/artwork/google_artwork.jpg'
 audible_art_file = 'assets/artwork/audible_artwork.jpg'
 ff_art_file = 'assets/artwork/ff_artwork.jpg'
 original_art_file = 'assets/artwork/original_artwork.jpg'
-
+no_image = "no_image.jpg"
 
 def try_check1(book, string1):
     result = ""
@@ -55,9 +58,6 @@ def try_check3_array(book, string1, string2, number, string3):
 
 
 def soup_check(soup):
-    # some books don't have the requested info. this is to check is it had info to pull
-    print(type(soup))
-
     if soup is None:
         soup_string = ""
     elif type(soup) != str:
@@ -82,6 +82,7 @@ def soup_check(soup):
 def audible_scrapper(input_string):
     series = "Novel"
     book_number = ""
+
     url = "https://www.audible.com/search?ref=a_search_l1_feature_six_browse-bin_0&feature_six_browse-bin=18685580011&keywords=" + input_string
     page_source = requests.get(url)
     soup = BeautifulSoup(page_source.text, 'lxml')
@@ -109,6 +110,7 @@ def audible_scrapper(input_string):
             series = split_subtitle_book[0]
             if len(split_subtitle_book) > 1:
                 book_number = split_subtitle_book[1]
+
         length = soup_check(book.find('li', attrs={"class": "bc-list-item runtimeLabel"}))
         date = soup_check(book.find('li', attrs={"class": "bc-list-item releaseDateLabel"}))
         language = soup_check(book.find('li', attrs={"class": "bc-list-item languageLabel"}))
@@ -157,6 +159,8 @@ def goodreads_srcapper(input_string):
             title = info_split[0]
             series = info_split[1]
             book_number = info_split[2]
+        else:
+            print(len(info_split) + " error goodreads " + info)
         web_url = "https://www.goodreads.com/book/show/" + id
         if series == "":
             series = "Novel"
@@ -170,42 +174,55 @@ def ff_search(input_string):
     query = input_string.replace(" ", "+")
     url = f"https://www.googleapis.com/customsearch/v1?key={api_keys.API_KEY}&cx={api_keys.SEARCH_ENGINE_ID}&q={query}"
     data = requests.get(url).json()
-    print(data)
+    print(data["searchInformation"]["totalResults"])
     book_list = []
-    for book in data["items"]:
-        link = book["link"]
-        if ".htm" in link:
-            soup = ff_direct_search(link)
-            try:
-                image = soup.find('img', attrs={'class': 'bookimage'})['data-us']
-                image_url = "https://m.media-amazon.com/images/I/" + image
-            except:
-                print("no image")
-            info = soup.find('title').get_text(strip=True).replace(") by ", "~").replace(" by ", "~").replace(' (', "~").replace(
-                ', book ', "~")
-            print(info)
-            info_split = info.split("~")
-            series = 'Novel'
-            book_number = "0"
-            if len(info_split) == 2:
-                title = info_split[0]
-                author = info_split[1]
-            if len(info_split) == 1:
-                title, book_number = info.split(": Book ")
-                series = title
-            elif len(info_split) == 4:
-                title = info_split[0]
-                series = info_split[1]
-                book_number = info_split[2]
-                author = info_split[3]
-            else:
-                print("error")
-                print(info_split)
-            if series == "":
-                series = "Novel"
-            book_list.append({"id": link, "title": title, "series": series, "author": author,
-                              "book_number": book_number, "web_url": link, "image_url": image_url})
-    ff_database_post(book_list)
+    if int(data["searchInformation"]["totalResults"]) > 0:
+        for book in data["items"]:
+            link = book["link"]
+            if ".htm" in link:
+                soup = ff_direct_search(link)
+                image_url = "no_image.jpg"
+                series = 'Novel'
+                book_number = "0"
+                title = ""
+                author = ""
+                try:
+                    image = soup.find('img', attrs={'class': 'bookimage'})['data-us']
+                    image_url = "https://m.media-amazon.com/images/I/" + image
+                except:
+                    print("no image")
+                info = soup.find('title').get_text(strip=True).replace(") by ", "~").replace(" by ", "~").replace(' (',
+                                                                                                                  "~").replace(
+                    ', book ', "~")
+                # print(info)
+                info_split = info.split("~")
+                print("info " + info)
+                if len(info_split) == 3:
+                    title = info_split[0]
+                    series = info_split[1]
+                    author = info_split[2]
+                elif len(info_split) == 2:
+                    title = info_split[0]
+                    author = info_split[1]
+                elif len(info_split) == 1:
+                    try:
+                        title, book_number = info.split(": Book ")
+                        series = title
+                    except:
+                        print("error")
+                elif len(info_split) == 4:
+                    title = info_split[0]
+                    series = info_split[1]
+                    book_number = info_split[2]
+                    author = info_split[3]
+                else:
+                    print(len(info_split) + " error ff " + info)
+                    # print(info_split)
+                if series == "":
+                    series = "Novel"
+                book_list.append({"id": link, "title": title, "series": series, "author": author,
+                                  "book_number": book_number, "web_url": link, "image_url": image_url})
+        ff_database_post(book_list)
     return book_list
 
 
@@ -215,13 +232,14 @@ def google_search(input_string):
     book_list = []
     series = "Novel"
     data = requests.get(string_builder).json()
+    image = no_image
     for book in data["items"]:
-        print(book)
+        #print(book)
         title = try_check2(book, 'volumeInfo', 'title')
         subtitle = try_check2(book, 'volumeInfo', 'subtitle')
         try:
             authors = book['volumeInfo']['authors'][0]
-            print(authors)
+            # print(authors)
         except:
             authors = ''
         date = try_check2(book, 'volumeInfo', 'publishedDate')
@@ -231,21 +249,21 @@ def google_search(input_string):
             image = book['volumeInfo']['imageLinks']['thumbnail']
         except:
             print("image issue")
-        print(title)
-        print(type(title))
+        # print(title)
+        # print(type(title))
         book_id = title + " " + subtitle + " " + authors
         if series == "":
             series = "Novel"
         book_list.append({"id": book_id, "title": title, "subtitle": subtitle, "authors": authors, "release_date": date,
                           "publisher": publisher, "description": description, "image_url": image})
-        print(book_list)
+        #print(book_list)
     google_database_post(book_list)
     return book_list
 
 
 # database post ********************************
 def audible_database_post(book_list):
-    db_file = "audiobookspython.db"
+    db_file = database
     con = sqlite3.connect(db_file)
     for book in book_list:
         con.execute('INSERT INTO audible (id, title, author, narrator, series, book_number, image_url, length, '
@@ -256,7 +274,7 @@ def audible_database_post(book_list):
 
 
 def ff_database_post(book_list):
-    db_file = "audiobookspython.db"
+    db_file = database
     con = sqlite3.connect(db_file)
     for book in book_list:
         con.execute('INSERT INTO fantasticfiction (id, title, author, series, book_number, image_url, web_url) '
@@ -265,7 +283,7 @@ def ff_database_post(book_list):
 
 
 def goodreads_database_post(book_list):
-    db_file = "audiobookspython.db"
+    db_file = database
     con = sqlite3.connect(db_file)
     for book in book_list:
         con.execute('INSERT INTO goodreads (id, title, author, series, book_number, image_url, web_url, rating) '
@@ -274,7 +292,7 @@ def goodreads_database_post(book_list):
 
 
 def google_database_post(book_list):
-    db_file = "audiobookspython.db"
+    db_file = database
     con = sqlite3.connect(db_file)
     for book in book_list:
         con.execute(
@@ -284,10 +302,10 @@ def google_database_post(book_list):
 
 
 def database_get(id, table):
-    con = sqlite3.connect("audiobookspython.db")
+    con = sqlite3.connect(database)
     c = con.cursor()
-    print(id)
-    print(table)
+    # print(id)
+    # print(table)
     c.execute("Select * from " + table + " where id='" + id + "'")
     row = c.fetchone()
     return row
@@ -306,6 +324,7 @@ def delete_artwork():
     delete_exist(original_art_file)
 
 
+
 def ff_direct_search(link):
     page_source = requests.get(link)
     soup = BeautifulSoup(page_source.text, 'lxml')
@@ -314,19 +333,40 @@ def ff_direct_search(link):
 
 
 def image_refresh(self):
-    self.google_artwork.setPixmap((QPixmap(google_art_file)).scaled(self.google_artwork.size(), Qt.KeepAspectRatio,
-                                                                    Qt.SmoothTransformation))
-    self.ff_artwork.setPixmap((QPixmap(ff_art_file)).scaled(self.ff_artwork.size(), Qt.KeepAspectRatio,
-                                                            Qt.SmoothTransformation))
-    self.audible_artwork.setPixmap((QPixmap(audible_art_file)).scaled(self.audible_artwork.size(), Qt.KeepAspectRatio,
-                                                                      Qt.SmoothTransformation))
-    self.goodreads_artwork.setPixmap((QPixmap(goodreads_art_file)).scaled(self.goodreads_artwork.size(),
-                                                                          Qt.KeepAspectRatio, Qt.SmoothTransformation))
-    self.finished_artwork.setPixmap((QPixmap(finished_art_file)).scaled(self.finished_artwork.size(),
-                                                                        Qt.KeepAspectRatio, Qt.SmoothTransformation))
-    self.original_artwork.setPixmap((QPixmap(original_art_file)).scaled(self.original_artwork.size(),
-                                                                        Qt.KeepAspectRatio, Qt.SmoothTransformation))
-
+    if path.exists(google_art_file):
+        self.google_artwork.setPixmap(
+            (QPixmap(google_art_file)).scaled(self.google_artwork.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+    else:
+        self.google_artwork.setPixmap((QPixmap(google_art_file)))
+    if path.exists(ff_art_file):
+        self.ff_artwork.setPixmap(
+            (QPixmap(ff_art_file)).scaled(self.ff_artwork.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+    else:
+        self.google_artwork.setPixmap((QPixmap(ff_art_file)))
+    if path.exists(audible_art_file):
+        self.audible_artwork.setPixmap(
+            (QPixmap(audible_art_file)).scaled(self.audible_artwork.size(), Qt.KeepAspectRatio,
+                                               Qt.SmoothTransformation))
+    else:
+        self.google_artwork.setPixmap((QPixmap(audible_art_file)))
+    if path.exists(goodreads_art_file):
+        self.goodreads_artwork.setPixmap(
+            (QPixmap(goodreads_art_file)).scaled(self.goodreads_artwork.size(), Qt.KeepAspectRatio,
+                                                 Qt.SmoothTransformation))
+    else:
+        self.google_artwork.setPixmap((QPixmap(goodreads_art_file)))
+    if path.exists(finished_art_file):
+        self.finished_artwork.setPixmap(
+            (QPixmap(finished_art_file)).scaled(self.finished_artwork.size(), Qt.KeepAspectRatio,
+                                                Qt.SmoothTransformation))
+    else:
+        self.google_artwork.setPixmap((QPixmap(finished_art_file)))
+    if path.exists(original_art_file):
+        self.original_artwork.setPixmap(
+            (QPixmap(original_art_file)).scaled(self.original_artwork.size(), Qt.KeepAspectRatio,
+                                                Qt.SmoothTransformation))
+    else:
+        self.google_artwork.setPixmap((QPixmap(original_art_file)))
 
 def delete_exist(path):
     file = pathlib.Path(path)
