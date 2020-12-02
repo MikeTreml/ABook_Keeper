@@ -193,16 +193,16 @@ class Ui_MainWindow(object):
         # self.ff_book_number.setAlignment(Qt.AlignCenter)
         self.ff_fuzzy.setAlignment(Qt.AlignCenter)
         self.ff_search_toggle.setCheckable(True)
-        self.ff_search_toggle.setChecked(False)
+        self.ff_search_toggle.setChecked(True)
         self.ff_URL.setInputMethodHints(Qt.ImhNone)
         # self.goodreads_book_number.setAlignment(Qt.AlignCenter)
         self.goodreads_fuzzy.setAlignment(Qt.AlignCenter)
         self.goodreads_search_toggle.setCheckable(True)
-        self.goodreads_search_toggle.setChecked(False)
+        self.goodreads_search_toggle.setChecked(True)
         # self.google_book_number.setAlignment(Qt.AlignCenter)
         self.google_fuzzy.setAlignment(Qt.AlignCenter)
         self.google_search_toggle.setCheckable(True)
-        self.google_search_toggle.setChecked(False)
+        self.google_search_toggle.setChecked(True)
         self.finished_location_label.setMaximumSize(QSize(16777215, 15))
         self.save_format_label.setMaximumSize(QSize(16777215, 15))
         self.settings_file_location.setMaximumSize(QSize(16777215, 15))
@@ -832,7 +832,10 @@ class Ui_MainWindow(object):
         self.clear_fields()
         combobox_string = self.file_combobox.currentText()
         if combobox_string != "":
-            audio_file = eyed3.load(os.path.join(self.file_locations(), Path(combobox_string)))
+            try:
+                audio_file = eyed3.load(os.path.join(self.file_locations(), Path(self.file_combobox.currentText())))
+            except:
+                audio_file = eyed3.load(combobox_string)
             if "/" in combobox_string:
                 file = combobox_string.split("/")[-1]
             else:
