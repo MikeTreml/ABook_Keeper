@@ -830,17 +830,21 @@ class Ui_MainWindow(object):
 
     def file_combobox_select(self):
         self.clear_fields()
-        if self.file_combobox.currentText() != "":
-            audio_file = eyed3.load(os.path.join(self.file_locations(), Path(self.file_combobox.currentText())))
-            file = self.file_combobox.currentText().split("/")[-1]
+        combobox_string = self.file_combobox.currentText()
+        if combobox_string != "":
+            audio_file = eyed3.load(os.path.join(self.file_locations(), Path(combobox_string)))
+            if "/" in combobox_string:
+                file = combobox_string.split("/")[-1]
+            else:
+                file = combobox_string.split("\\")[-1]
             title = str(audio_file.tag.title)
             author = str(audio_file.tag.artist)
             series = str(audio_file.tag.album)
             track_No = str(audio_file.tag.track_num[0])
-            narrator = str(audio_file.tag.composer)
-            release_Date = str(audio_file.tag.release_date)
-            narrator = str(audio_file.tag.album_artist)
-            genre = str(audio_file.tag.genre)
+            # narrator = str(audio_file.tag.composer)
+            # release_Date = str(audio_file.tag.release_date)
+            # narrator = str(audio_file.tag.album_artist)
+            # genre = str(audio_file.tag.genre)
             audible_URL = str(audio_file.tag.artist_url).replace('None', '')
             ff_URL = str(audio_file.tag.commercial_url).replace('None', '')
             # google_URL = str(audio_file.tag.internet_radio_url).replace('None', '')
@@ -1016,7 +1020,8 @@ class Ui_MainWindow(object):
                                                        self.file_author.text() + " " +
                                                        self.file_series.text() + " " +
                                                        self.file_name.text())
-            search_string = search_fields.replace("book", "").replace("0", "").replace("None", "").replace(" ", "+")
+            search_string = search_fields.replace(";", "").replace(":", "").replace("'", "").replace(",", "+").replace(
+                "-", "+").replace("book", "").replace("0", "").replace("None", "").replace(" ", "+")
             if self.google_search_toggle.isChecked():
                 book_list = Functions.google_search(search_string)
                 self.google_combobox_update(book_list)
