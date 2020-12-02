@@ -230,7 +230,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "ABook Keeper"))
         self.audible_post_button.setText(_translate("MainWindow", "Audible"))
         self.audible_search_toggle.setText(_translate("MainWindow", "Audible"))
         self.ff_post_button.setText(_translate("MainWindow", "FantasticFiction"))
