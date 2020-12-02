@@ -972,7 +972,7 @@ class Ui_MainWindow(object):
             else:
                 self.goodreads_fuzzy.setStyleSheet("background-color: red; color: black")
 
-    # combobox update ********************************
+    # combobox update **************************
     def file_combobox_update(self):
         self.file_combobox.clear()
         files = self.file_locations().replace("\u202a", "")
