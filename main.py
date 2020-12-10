@@ -502,7 +502,6 @@ class Ui_MainWindow(object):
         self.ff_post_button.setStyleSheet("background-color: rgb(7, 44, 108);")
         self.goodreads_post_button.setStyleSheet("background-color: rgb(75, 59, 39);")
         self.google_post_button.setStyleSheet("background-color: rgb(71, 24, 95);")
-
         self.audible_search_toggle.raise_()
 
     def set_ui_button(self):
