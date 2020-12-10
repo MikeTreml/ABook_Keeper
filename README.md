@@ -7,11 +7,12 @@ Technologies: Python, Google Books API, Google Custom Search API, BeautifulSou W
 
 # <a name="creator"></a>Creator
 * Mike Treml  <a href="https://linkedin.com/in/miketreml" rel="nofollow" alt="LinkedIn" >LinkedIn</a>
+> 
 ![](./assets/GitHub/Abook1.jpg)
 
-![](./assets/GitHub/Abook2.png)
+>![](./assets/GitHub/Abook2.png)
 
-![](./assets/GitHub/settings.png)
+>![](./assets/GitHub/settings.png)
 <hr>
 
 
