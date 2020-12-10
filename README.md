@@ -4,8 +4,14 @@
 > 
 Technologies: Python, Google Books API, Google Custom Search API, BeautifulSou Website Scrapper tool, SQLite, and EyeD3 a ID3 editor. 
 <hr>
-
-
 # <a name="creator"></a>Creator
 * Mike Treml  <a href="https://linkedin.com/in/miketreml" rel="nofollow" alt="LinkedIn" >LinkedIn</a>
+<hr>
+![](./assets/GitHub/Abook1.jpg)
+![](./assets/GitHub/Abook2.jpg)
+![](./assets/GitHub/settings.jpg)
+
+
+
+
 
