@@ -10,9 +10,9 @@ Technologies: Python, Google Books API, Google Custom Search API, BeautifulSou W
 > 
 ![](./assets/GitHub/Abook1.jpg)
 
->![](./assets/GitHub/Abook2.png)
+![](./assets/GitHub/Abook2.png)
 
->![](./assets/GitHub/settings.png)
+![](./assets/GitHub/settings.png)
 <hr>
 
 
