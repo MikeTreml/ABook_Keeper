@@ -15,8 +15,4 @@ Technologies: Python, Google Books API, Google Custom Search API, BeautifulSou W
 ![](./assets/GitHub/settings.png)
 <hr>
 
-
-
-
-
-
+ 
